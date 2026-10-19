@@ -1,0 +1,106 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: black;
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    user-select: none;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.screen {
+    position: absolute;
+    text-align: center;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10;
+}
+
+.active { display: flex; }
+
+h1 { font-size: 4rem; margin-bottom: 2rem; color: #00FF00; text-shadow: 0 0 15px #00FF00; }
+h2 { font-size: 2.5rem; margin-bottom: 1.5rem; }
+
+button {
+    background: transparent;
+    border: 2px solid #00FF00;
+    color: #00FF00;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: 0.2s;
+    text-transform: uppercase;
+}
+
+button:disabled {
+    border-color: #555;
+    color: #555;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    background: transparent;
+    color: #555;
+    box-shadow: none;
+}
+
+button.main-btn { font-size: 1.5rem; padding: 15px 30px; margin: 8px; }
+
+button:hover:not(:disabled) {
+    background: #00FF00;
+    color: black;
+    box-shadow: 0 0 15px #00FF00;
+}
+
+.phase-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+
+.color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+.color-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #333; transition: 0.2s; }
+.color-btn:hover { border-color: white; transform: scale(1.1); }
+
+p { font-size: 1.5rem; line-height: 2rem; }
+
+canvas { display: none; background-color: black; z-index: 1; }
+
+#hud {
+    position: absolute; top: 20px; left: 20px; color: white;
+    font-size: 1.5rem; z-index: 5; display: none; flex-direction: column;
+    gap: 10px; text-shadow: 0 0 5px black;
+}
+
+.danger-text { color: red; text-shadow: 0 0 15px red; }
+.victory-text { color: #FF00FF; text-shadow: 0 0 20px #FF00FF; }
+.stats-text { color: #888; font-size: 1.2rem; margin-bottom: 10px; }
+
+/* Custom HP Styles */
+.custom-hp-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; font-size: 1.2rem; margin-bottom: 10px;
+}
+
+input[type=number] {
+    background: black; border: 2px solid #00FF00; color: #00FF00;
+    font-family: inherit; font-size: 1.2rem; width: 80px; padding: 5px;
+    text-align: center; outline: none;
+}
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+}
+input[type=number] { -moz-appearance: textfield; }
