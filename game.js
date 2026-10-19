@@ -18,7 +18,7 @@ let playerColor = '#00FFFF'; // Default Cyan
 // Magnetic Mode State Variables
 let magneticTimeLimit = 0;
 let magneticTimer = 0;
-let sharedHits = 0;
+let magneticHits = 0;
 let isMagneticMode = false;
 
 // Time tracking
@@ -96,15 +96,26 @@ function setupMode(mode, phase = '1') {
 }
 
 function startMagneticMode(frames) {
+    let magneticScreen = document.getElementById('magnetic-screen');
+    if (magneticScreen) magneticScreen.classList.remove('active');
+    
+    let specialScreen = document.getElementById('special-screen');
+    if (specialScreen) specialScreen.classList.remove('active');
+
+    let menuScreen = document.getElementById('menu-screen');
+    if (menuScreen) menuScreen.classList.remove('active');
+
     gameMode = 'multiplayer';
     challengeMode = 'none';
     isMagneticMode = true;
     magneticTimeLimit = frames;
     magneticTimer = frames;
-    sharedHits = 0;
-    
-    // Start game in Magnetic Mode with Debug invincibility by default
-    startGame('Debug', 'Debug');
+    magneticHits = 0; // Reset specific magnetic hit counter
+
+    p1.active = true;
+    p2.active = true;
+
+    startGame('Debug', 'Debug'); 
 }
 
 function goBackFromDifficulty() {
@@ -399,31 +410,20 @@ function update() {
         updatePlayer(p2, p2Keys);
     }
 
-    // Magnetic Mode Distance & Timer Logic
+    // Isolated Magnetic Mode Logic
     if (isMagneticMode && p1.active && p2.active) {
         let dx = p1.x - p2.x;
         let dy = p1.y - p2.y;
         let dist = Math.sqrt(dx * dx + dy * dy);
 
+        // Check if players touch each other
         if (dist < (p1.size / 2 + p2.size / 2)) {
-            magneticTimer = magneticTimeLimit; // Reset timer when touching
+            magneticTimer = magneticTimeLimit; // Reset timer upon touching
         } else {
             magneticTimer--;
             if (magneticTimer <= 0) {
-                sharedHits++;
-                magneticTimer = magneticTimeLimit;
-                p1.isInvulnerable = 60;
-                p2.isInvulnerable = 60;
-                
-                if (currentDifficulty !== 'Debug') {
-                    p1.health--;
-                    p2.health--;
-                    if (p1.health <= 0 || p2.health <= 0) {
-                        p1.active = false;
-                        p2.active = false;
-                        gameOver();
-                    }
-                }
+                magneticHits++; // Only increments the magnetic counter
+                magneticTimer = magneticTimeLimit; // Reset timer
             }
         }
     }
@@ -525,10 +525,7 @@ function update() {
     // HUD Updates
     document.getElementById('timer-display').innerText = displayTime;
     
-    if (isMagneticMode) {
-        let remainingSec = (magneticTimer / 60).toFixed(1);
-        document.getElementById('hp-display').innerText = `MAGNETIC TIMER: ${remainingSec}s | Shared Hits: ${sharedHits}` + (currentDifficulty !== 'Debug' ? ` | HP: ${p1.health}` : '');
-    } else if (currentDifficulty === 'Debug') {
+    if (currentDifficulty === 'Debug') {
         document.getElementById('hp-display').innerText = `DEBUG P1 (Hits: ${p1.hitsTaken})` + (gameMode === 'multiplayer' ? ` | P2 (Hits: ${p2.hitsTaken})` : '');
     } else {
         document.getElementById('hp-display').innerText = `P1 HP: ${p1.health > 0 ? p1.health : 'DEAD'}` + (gameMode === 'multiplayer' ? ` | P2 HP: ${p2.health > 0 ? p2.health : 'DEAD'}` : '');
@@ -657,6 +654,16 @@ function draw() {
         }
     }
 
+    // Separate UI for Magnetic Mode
+    if (isMagneticMode) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '16px Courier New';
+        ctx.textAlign = 'center';
+        
+        ctx.fillText(`Magnetic hits taken: ${magneticHits}`, canvas.width / 2, 30);
+        ctx.fillText(`Time to touch: ${(magneticTimer / 60).toFixed(1)}s`, canvas.width / 2, 50);
+    }
+
     ctx.textAlign = 'center';
     let startFrame = gameMode === 'practice' ? PHASE_FRAMES[selectedPracticePhase] : 0;
     if (p1.isInvulnerable > 0 && frameCount < startFrame + 120) {
@@ -749,7 +756,7 @@ function gameWon() {
     if (currentDifficulty === 'Debug') {
         document.getElementById('debug-hits-display').style.display = 'block';
         if (gameMode === 'multiplayer') {
-            document.getElementById('final-hits').innerText = `P1: ${p1.hitsTaken} | P2: ${p2.hitsTaken}${isMagneticMode ? ` | Shared Hits: ${sharedHits}` : ''}`;
+            document.getElementById('final-hits').innerText = `P1: ${p1.hitsTaken} | P2: ${p2.hitsTaken}${isMagneticMode ? ` | Magnetic Hits: ${magneticHits}` : ''}`;
         } else {
             document.getElementById('final-hits').innerText = `${p1.hitsTaken}`;
         }
