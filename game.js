@@ -13,7 +13,10 @@ let isPaused = false;
 let frameCount = 0;
 let projectiles = [];
 let warnings = [];
-let playerColor = '#00FFFF'; // Default Cyan
+
+// Player Colors
+let p1Color = '#00FFFF'; // Default Cyan
+let p2Color = '#FF0000'; // Default Red
 
 // Magnetic Mode State Variables
 let magneticTimeLimit = 0;
@@ -32,6 +35,13 @@ let challengeMode = 'none'; // 'none', 'invisible', 'bullet-colored'
 let selectedPracticePhase = '1';
 let currentHpSetting = 5;
 
+// Constants for Timing
+const END_FRAMES = {
+    PHASE1: 2400,
+    PHASE2: 5400,
+    FULL: 9000
+};
+
 // Input tracking
 const keys = {};
 
@@ -39,13 +49,13 @@ const keys = {};
 const p1 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: true, color: '#00FFFF' // Cyan default
+    hitsTaken: 0, active: true, color: '#00FFFF' 
 };
 
 const p2 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: false, color: '#FF0000' // Red default
+    hitsTaken: 0, active: false, color: '#FF0000' 
 };
 
 const PHASE_FRAMES = {
@@ -69,10 +79,26 @@ function showScreen(screenId) {
     document.getElementById('hud').style.display = 'none';
 }
 
-function setPlayerColor(color) {
-    playerColor = color;
-    document.getElementById('current-color-text').textContent = color;
-    document.getElementById('current-color-text').style.color = color;
+function setPlayerColor(playerNum, color) {
+    let errorMsg = document.getElementById('color-error-msg');
+    
+    if (playerNum === 1) {
+        if (color === p2Color) {
+            errorMsg.textContent = "Player 1 cannot pick the same color as Player 2!";
+            return;
+        }
+        p1Color = color;
+        document.getElementById('p1-color-header').style.color = color;
+        errorMsg.textContent = "";
+    } else if (playerNum === 2) {
+        if (color === p1Color) {
+            errorMsg.textContent = "Player 2 cannot pick the same color as Player 1!";
+            return;
+        }
+        p2Color = color;
+        document.getElementById('p2-color-header').style.color = color;
+        errorMsg.textContent = "";
+    }
 }
 
 function spawnProjectile(x, y, vx, vy, size, life = Infinity, isBouncy = false) {
@@ -110,7 +136,7 @@ function startMagneticMode(frames) {
     isMagneticMode = true;
     magneticTimeLimit = frames;
     magneticTimer = frames;
-    magneticHits = 0; // Reset specific magnetic hit counter
+    magneticHits = 0; 
 
     p1.active = true;
     p2.active = true;
@@ -177,7 +203,6 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // Player 1 Dash: Spacebar, Slash, or Right Shift
     if ((e.code === 'Space' || e.code === 'Slash' || e.code === 'ShiftRight' || e.key === '/') && gameActive && !isPaused && p1.dashCooldown <= 0 && p1.active) {
         let dx = 0; let dy = 0;
         if (keys.ArrowUp || (gameMode !== 'multiplayer' && (keys.w || keys.W))) dy -= 1;
@@ -196,7 +221,6 @@ window.addEventListener('keydown', (e) => {
         p1.isInvulnerable = Math.max(p1.isInvulnerable, 25); 
     }
 
-    // Player 2 Dash: Left Shift, Q, or F
     if ((e.code === 'ShiftLeft' || e.code === 'KeyQ' || e.code === 'KeyF' || e.key === 'q' || e.key === 'Q' || e.key === 'f' || e.key === 'F') && gameActive && !isPaused && p2.dashCooldown <= 0 && p2.active) {
         let dx = 0; let dy = 0;
         if (keys.w || keys.W) dy -= 1;
@@ -350,21 +374,21 @@ function executeAttacks() {
     if (gameMode === 'practice') {
         if (selectedPracticePhase === '1.1' && t === 800) gameWon();
         if (selectedPracticePhase === '1.2' && t === 1600) gameWon();
-        if (selectedPracticePhase === '1.3' && t === 2400) gameWon();
-        if (selectedPracticePhase === '1' && t === 2400) gameWon();
+        if (selectedPracticePhase === '1.3' && t === END_FRAMES.PHASE1) gameWon();
+        if (selectedPracticePhase === '1' && t === END_FRAMES.PHASE1) gameWon();
 
         if (selectedPracticePhase === '2.1' && t === 3600) gameWon();
         if (selectedPracticePhase === '2.2' && t === 4500) gameWon();
-        if (selectedPracticePhase === '2.3' && t === 5400) gameWon();
-        if (selectedPracticePhase === '2' && t === 5400) gameWon();
+        if (selectedPracticePhase === '2.3' && t === END_FRAMES.PHASE2) gameWon();
+        if (selectedPracticePhase === '2' && t === END_FRAMES.PHASE2) gameWon();
 
         if (selectedPracticePhase === '3.1' && t === 6800) gameWon();
         if (selectedPracticePhase === '3.2' && t === 7900) gameWon();
-        if (selectedPracticePhase === '3.3' && t === 9000) gameWon();
-        if (selectedPracticePhase === '3' && t === 9000) gameWon();
+        if (selectedPracticePhase === '3.3' && t === END_FRAMES.FULL) gameWon();
+        if (selectedPracticePhase === '3' && t === END_FRAMES.FULL) gameWon();
     }
 
-    if ((gameMode === 'full' || gameMode === 'multiplayer') && t === 9000) gameWon();
+    if ((gameMode === 'full' || gameMode === 'multiplayer') && t === END_FRAMES.FULL) gameWon();
 }
 
 function updatePlayer(player, keysArr) {
@@ -395,7 +419,6 @@ function update() {
 
     let timeSurvived = Math.floor((Date.now() - startTime - totalPausedTime) / 1000);
 
-    // Player 1 Movement
     let p1Keys = {
         up: keys.ArrowUp || (gameMode !== 'multiplayer' && (keys.w || keys.W)),
         down: keys.ArrowDown || (gameMode !== 'multiplayer' && (keys.s || keys.S)),
@@ -404,26 +427,23 @@ function update() {
     };
     updatePlayer(p1, p1Keys);
 
-    // Player 2 Movement
     if (gameMode === 'multiplayer') {
         let p2Keys = { up: keys.w || keys.W, down: keys.s || keys.S, left: keys.a || keys.A, right: keys.d || keys.D };
         updatePlayer(p2, p2Keys);
     }
 
-    // Isolated Magnetic Mode Logic
     if (isMagneticMode && p1.active && p2.active) {
         let dx = p1.x - p2.x;
         let dy = p1.y - p2.y;
         let dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Check if players touch each other
         if (dist < (p1.size / 2 + p2.size / 2)) {
-            magneticTimer = magneticTimeLimit; // Reset timer upon touching
+            magneticTimer = magneticTimeLimit; 
         } else {
             magneticTimer--;
             if (magneticTimer <= 0) {
-                magneticHits++; // Only increments the magnetic counter
-                magneticTimer = magneticTimeLimit; // Reset timer
+                magneticHits++; 
+                magneticTimer = magneticTimeLimit; 
             }
         }
     }
@@ -522,7 +542,6 @@ function update() {
     let displayTime = timeSurvived;
     if (gameMode === 'practice') displayTime += Math.floor(PHASE_FRAMES[selectedPracticePhase] / 60);
     
-    // HUD Updates
     document.getElementById('timer-display').innerText = displayTime;
     
     if (currentDifficulty === 'Debug') {
@@ -654,7 +673,6 @@ function draw() {
         }
     }
 
-    // Separate UI for Magnetic Mode
     if (isMagneticMode) {
         ctx.fillStyle = '#FFFFFF';
         ctx.font = '16px Courier New';
@@ -687,13 +705,23 @@ function startGame(hp, difficultyName) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('debug-hits-display').style.display = 'none';
     resize(); canvas.style.display = 'block'; document.getElementById('hud').style.display = 'flex';
-    
-    // Set P1 Color based on challenges / defaults
+
+    if (gameMode === 'full' || gameMode === 'multiplayer') {
+        frameCount = 0; 
+        document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.FULL / 60);
+    } else {
+        frameCount = PHASE_FRAMES[selectedPracticePhase]; 
+        let majorPhase = selectedPracticePhase.charAt(0);
+        if (majorPhase === '1') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.PHASE1 / 60);
+        if (majorPhase === '2') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.PHASE2 / 60);
+        if (majorPhase === '3') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.FULL / 60);
+    }
+
     if (challengeMode === 'invisible') p1.color = '#000000';
     else if (challengeMode === 'bullet-colored') p1.color = '#00FF00';
-    else p1.color = playerColor;
+    else p1.color = p1Color;
 
-    p2.color = '#FF0000'; // Default Red
+    p2.color = p2Color; 
 
     p1.x = canvas.width / 2 - (gameMode === 'multiplayer' ? 50 : 0); p1.y = canvas.height / 2; 
     p1.hitsTaken = 0; p1.active = true; p1.isInvulnerable = 120;
@@ -713,21 +741,14 @@ function startGame(hp, difficultyName) {
     projectiles = []; warnings = []; gameActive = true; isPaused = false;
     startTime = Date.now(); totalPausedTime = 0;
 
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        frameCount = 0; document.getElementById('timer-max').innerText = '/ 150';
-    } else {
-        frameCount = PHASE_FRAMES[selectedPracticePhase]; let majorPhase = selectedPracticePhase.charAt(0);
-        if (majorPhase === '1') document.getElementById('timer-max').innerText = '/ 40';
-        if (majorPhase === '2') document.getElementById('timer-max').innerText = '/ 90';
-        if (majorPhase === '3') document.getElementById('timer-max').innerText = '/ 150';
-    }
     update();
 }
 
 function retryPractice() { startGame(currentHpSetting, currentDifficulty); }
 
 function gameOver() {
-    gameActive = false; cancelAnimationFrame(animationId);
+    gameActive = false; 
+    cancelAnimationFrame(animationId);
     let challengeText = challengeMode !== 'none' ? ` Challenge - ${challengeMode.charAt(0).toUpperCase() + challengeMode.slice(1)}` : '';
 
     if (gameMode === 'practice') {
@@ -737,7 +758,8 @@ function gameOver() {
         let timeSurvived = Math.floor((Date.now() - startTime - totalPausedTime) / 1000);
         let modeLabel = isMagneticMode ? 'Magnetic Mode' : (gameMode === 'multiplayer' ? 'Multiplayer' : 'Full Fight');
         document.getElementById('death-stats-mode').innerText = `${modeLabel}${challengeText}, ${currentDifficulty}`;
-        document.getElementById('survival-time').innerText = timeSurvived; showScreen('game-over-screen');
+        document.getElementById('survival-time').innerText = timeSurvived; 
+        showScreen('game-over-screen');
     }
 }
 
