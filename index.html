@@ -12,7 +12,7 @@
     <!-- Main Menu -->
     <div id="menu-screen" class="screen active">
         <h1>NEON EVASION</h1>
-        <button class="main-btn" onclick="setupMode('full'); showScreen('difficulty-screen')">Start 2:30 Fight</button>
+        <button class="main-btn" onclick="setupMode('full'); showScreen('difficulty-screen')">Full Fight</button>
         <button class="main-btn" onclick="showScreen('practice-phase-screen')">Practice</button>
         <button class="main-btn" onclick="showScreen('extras-screen')">Extras</button>
         <button class="main-btn" onclick="showScreen('customize-screen')">Customize</button>
@@ -59,7 +59,7 @@
     <div id="special-screen" class="screen">
         <h2>SPECIAL MODES</h2>
         <button class="main-btn" onclick="setupMode('multiplayer'); showScreen('difficulty-screen')">Multiplayer (Local Duo)</button>
-        <button class="main-btn" onclick="showScreen('magnetic-screen')">Magnetic Mode</button>
+        <button class="main-btn" onclick="showScreen('magnetic-screen')">Magnetic Mode (Multiplayer)</button>
         <br><br>
         <button class="main-btn" onclick="showScreen('extras-screen')">Back</button>
     </div>
@@ -111,28 +111,54 @@
 
     <!-- Customize Screen -->
     <div id="customize-screen" class="screen">
-        <h2>SELECT PLAYER COLOR</h2>
-        <div class="color-grid">
-            <!-- Row 1 -->
-            <div class="color-btn" style="background: #FF0000;" onclick="setPlayerColor('#FF0000')"></div>
-            <div class="color-btn" style="background: #FF7F00;" onclick="setPlayerColor('#FF7F00')"></div>
-            <div class="color-btn" style="background: #FFFF00;" onclick="setPlayerColor('#FFFF00')"></div>
-            <div class="color-btn" style="background: #7FFF00;" onclick="setPlayerColor('#7FFF00')"></div>
-            <div class="color-btn" style="background: #00FF7F;" onclick="setPlayerColor('#00FF7F')"></div>
-            <!-- Row 2 -->
-            <div class="color-btn" style="background: #00FFFF;" onclick="setPlayerColor('#00FFFF')"></div>
-            <div class="color-btn" style="background: #007FFF;" onclick="setPlayerColor('#007FFF')"></div>
-            <div class="color-btn" style="background: #0000FF;" onclick="setPlayerColor('#0000FF')"></div>
-            <div class="color-btn" style="background: #7F00FF;" onclick="setPlayerColor('#7F00FF')"></div>
-            <div class="color-btn" style="background: #FF00FF;" onclick="setPlayerColor('#FF00FF')"></div>
-            <!-- Row 3 -->
-            <div class="color-btn" style="background: #FF007F;" onclick="setPlayerColor('#FF007F')"></div>
-            <div class="color-btn" style="background: #FFFFFF;" onclick="setPlayerColor('#FFFFFF')"></div>
-            <div class="color-btn" style="background: #C0C0C0;" onclick="setPlayerColor('#C0C0C0')"></div>
-            <div class="color-btn" style="background: #808080;" onclick="setPlayerColor('#808080')"></div>
-            <div class="color-btn" style="background: #4B0082;" onclick="setPlayerColor('#4B0082')"></div>
+        <h2>SELECT PLAYER COLORS</h2>
+        <div style="display: flex; gap: 50px; justify-content: center; align-items: flex-start; margin-bottom: 20px;">
+            
+            <!-- Player 1 Palette -->
+            <div>
+                <h3 style="color: #00FFFF;" id="p1-color-header">PLAYER 1</h3>
+                <div class="color-grid" id="p1-palette">
+                    <div class="color-btn" style="background: #FF0000;" onclick="setPlayerColor(1, '#FF0000')"></div>
+                    <div class="color-btn" style="background: #FF7F00;" onclick="setPlayerColor(1, '#FF7F00')"></div>
+                    <div class="color-btn" style="background: #FFFF00;" onclick="setPlayerColor(1, '#FFFF00')"></div>
+                    <div class="color-btn" style="background: #7FFF00;" onclick="setPlayerColor(1, '#7FFF00')"></div>
+                    <div class="color-btn" style="background: #00FF7F;" onclick="setPlayerColor(1, '#00FF7F')"></div>
+                    <div class="color-btn" style="background: #00FFFF;" onclick="setPlayerColor(1, '#00FFFF')"></div>
+                    <div class="color-btn" style="background: #007FFF;" onclick="setPlayerColor(1, '#007FFF')"></div>
+                    <div class="color-btn" style="background: #0000FF;" onclick="setPlayerColor(1, '#0000FF')"></div>
+                    <div class="color-btn" style="background: #7F00FF;" onclick="setPlayerColor(1, '#7F00FF')"></div>
+                    <div class="color-btn" style="background: #FF00FF;" onclick="setPlayerColor(1, '#FF00FF')"></div>
+                    <div class="color-btn" style="background: #FF007F;" onclick="setPlayerColor(1, '#FF007F')"></div>
+                    <div class="color-btn" style="background: #FFFFFF;" onclick="setPlayerColor(1, '#FFFFFF')"></div>
+                    <div class="color-btn" style="background: #C0C0C0;" onclick="setPlayerColor(1, '#C0C0C0')"></div>
+                    <div class="color-btn" style="background: #808080;" onclick="setPlayerColor(1, '#808080')"></div>
+                    <div class="color-btn" style="background: #4B0082;" onclick="setPlayerColor(1, '#4B0082')"></div>
+                </div>
+            </div>
+
+            <!-- Player 2 Palette -->
+            <div>
+                <h3 style="color: #FF0000;" id="p2-color-header">PLAYER 2</h3>
+                <div class="color-grid" id="p2-palette">
+                    <div class="color-btn" style="background: #FF0000;" onclick="setPlayerColor(2, '#FF0000')"></div>
+                    <div class="color-btn" style="background: #FF7F00;" onclick="setPlayerColor(2, '#FF7F00')"></div>
+                    <div class="color-btn" style="background: #FFFF00;" onclick="setPlayerColor(2, '#FFFF00')"></div>
+                    <div class="color-btn" style="background: #7FFF00;" onclick="setPlayerColor(2, '#7FFF00')"></div>
+                    <div class="color-btn" style="background: #00FF7F;" onclick="setPlayerColor(2, '#00FF7F')"></div>
+                    <div class="color-btn" style="background: #00FFFF;" onclick="setPlayerColor(2, '#00FFFF')"></div>
+                    <div class="color-btn" style="background: #007FFF;" onclick="setPlayerColor(2, '#007FFF')"></div>
+                    <div class="color-btn" style="background: #0000FF;" onclick="setPlayerColor(2, '#0000FF')"></div>
+                    <div class="color-btn" style="background: #7F00FF;" onclick="setPlayerColor(2, '#7F00FF')"></div>
+                    <div class="color-btn" style="background: #FF00FF;" onclick="setPlayerColor(2, '#FF00FF')"></div>
+                    <div class="color-btn" style="background: #FF007F;" onclick="setPlayerColor(2, '#FF007F')"></div>
+                    <div class="color-btn" style="background: #FFFFFF;" onclick="setPlayerColor(2, '#FFFFFF')"></div>
+                    <div class="color-btn" style="background: #C0C0C0;" onclick="setPlayerColor(2, '#C0C0C0')"></div>
+                    <div class="color-btn" style="background: #808080;" onclick="setPlayerColor(2, '#808080')"></div>
+                    <div class="color-btn" style="background: #4B0082;" onclick="setPlayerColor(2, '#4B0082')"></div>
+                </div>
+            </div>
         </div>
-        <p>Current Color: <span id="current-color-text" style="color: #00FFFF;">#00FFFF</span></p>
+        <p id="color-error-msg" style="color: red; height: 2rem; margin: 0;"></p>
         <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
     </div>
 
@@ -147,8 +173,8 @@
         <br>
         
         <h3>2-PLAYER MULTIPLAYER & MAGNETIC MODE</h3>
-        <p><strong>Player 1 (Cyan):</strong> Arrow Keys to move; Spacebar, /, or Right Shift to dash</p>
-        <p><strong>Player 2 (Red):</strong> WASD to move; Q, F, or Left Shift to dash</p>
+        <p><strong>Player 1:</strong> Arrow Keys to move; Spacebar, /, or Right Shift to dash</p>
+        <p><strong>Player 2:</strong> WASD to move; Q, F, or Left Shift to dash</p>
         
         <br>
         
