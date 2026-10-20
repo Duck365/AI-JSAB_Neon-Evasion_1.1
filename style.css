@@ -1,9 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
 body {
     margin: 0;
     padding: 0;
-    background-color: black;
-    color: white;
-    font-family: 'Courier New', Courier, monospace;
+    background-color: #050510;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
     overflow: hidden;
     user-select: none;
 }
@@ -12,95 +14,160 @@ body {
     position: relative;
     width: 100vw;
     height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+}
+
+canvas {
+    display: none;
+    width: 100%;
+    height: 100%;
 }
 
 .screen {
-    position: absolute;
-    text-align: center;
     display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(5, 5, 16, 0.9);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     z-index: 10;
+    text-align: center;
 }
 
-.active { display: flex; }
+.screen.active {
+    display: flex;
+}
 
-h1 { font-size: 4rem; margin-bottom: 2rem; color: #00FF00; text-shadow: 0 0 15px #00FF00; }
-h2 { font-size: 2.5rem; margin-bottom: 1.5rem; }
+h1 {
+    font-size: 4rem;
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff;
+    margin-bottom: 2rem;
+    letter-spacing: 5px;
+}
+
+h2 {
+    font-size: 2.5rem;
+    color: #ff00ff;
+    text-shadow: 0 0 15px #ff00ff;
+    margin-bottom: 1.5rem;
+}
+
+h3 {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+}
 
 button {
     background: transparent;
-    border: 2px solid #00FF00;
-    color: #00FF00;
-    padding: 10px 20px;
-    margin: 5px;
+    color: #fff;
+    border: 2px solid #00ffff;
+    padding: 15px 30px;
     font-size: 1.2rem;
+    font-family: 'Orbitron', sans-serif;
     cursor: pointer;
-    font-family: inherit;
-    transition: 0.2s;
+    margin: 10px;
+    transition: all 0.3s;
     text-transform: uppercase;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+button:hover:not(:disabled) {
+    background: #00ffff;
+    color: #000;
+    box-shadow: 0 0 20px #00ffff;
 }
 
 button:disabled {
     border-color: #555;
     color: #555;
     cursor: not-allowed;
-}
-
-button:disabled:hover {
-    background: transparent;
-    color: #555;
     box-shadow: none;
 }
 
-button.main-btn { font-size: 1.5rem; padding: 15px 30px; margin: 8px; }
-
-button:hover:not(:disabled) {
-    background: #00FF00;
-    color: black;
-    box-shadow: 0 0 15px #00FF00;
+.main-btn {
+    min-width: 250px;
 }
-
-.phase-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-
-.color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
-.color-btn { width: 60px; height: 60px; cursor: pointer; border: 2px solid #333; transition: 0.2s; }
-.color-btn:hover { border-color: white; transform: scale(1.1); }
-
-p { font-size: 1.5rem; line-height: 2rem; }
-
-canvas { display: none; background-color: black; z-index: 1; }
 
 #hud {
-    position: absolute; top: 20px; left: 20px; color: white;
-    font-size: 1.5rem; z-index: 5; display: none; flex-direction: column;
-    gap: 10px; text-shadow: 0 0 5px black;
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    right: 30px;
+    display: none;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px #fff;
+    pointer-events: none;
+    z-index: 5;
 }
 
-.danger-text { color: red; text-shadow: 0 0 15px red; }
-.victory-text { color: #FF00FF; text-shadow: 0 0 20px #FF00FF; }
-.stats-text { color: #888; font-size: 1.2rem; margin-bottom: 10px; }
+.danger-text {
+    color: #ff0000;
+    text-shadow: 0 0 20px #ff0000;
+}
 
-/* Custom HP Styles */
+.victory-text {
+    color: #00ff00;
+    text-shadow: 0 0 20px #00ff00;
+}
+
+.stats-text {
+    font-size: 1.2rem;
+    color: #aaa;
+    margin-bottom: 10px;
+}
+
+.phase-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.color-btn {
+    width: 50px;
+    height: 50px;
+    border: 2px solid #fff;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+}
+
 .custom-hp-row {
-    display: flex; align-items: center; justify-content: center;
-    gap: 10px; font-size: 1.2rem; margin-bottom: 10px;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
 }
 
-input[type=number] {
-    background: black; border: 2px solid #00FF00; color: #00FF00;
-    font-family: inherit; font-size: 1.2rem; width: 80px; padding: 5px;
-    text-align: center; outline: none;
+#custom-hp-input {
+    background: transparent;
+    border: 1px solid #fff;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.2rem;
+    padding: 5px;
+    width: 60px;
+    text-align: center;
+    margin-left: 10px;
 }
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-    -webkit-appearance: none; margin: 0;
+
+p {
+    font-size: 1.2rem;
+    line-height: 1.5;
 }
-input[type=number] { -moz-appearance: textfield; }
