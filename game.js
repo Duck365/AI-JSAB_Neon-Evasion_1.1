@@ -13,10 +13,7 @@ let isPaused = false;
 let frameCount = 0;
 let projectiles = [];
 let warnings = [];
-
-// Player Colors
-let p1Color = '#00FFFF'; // Default Cyan
-let p2Color = '#FF0000'; // Default Red
+let playerColor = '#00FFFF'; // Default Cyan
 
 // Magnetic Mode State Variables
 let magneticTimeLimit = 0;
@@ -35,13 +32,6 @@ let challengeMode = 'none'; // 'none', 'invisible', 'bullet-colored'
 let selectedPracticePhase = '1';
 let currentHpSetting = 5;
 
-// Constants for Timing
-const END_FRAMES = {
-    PHASE1: 2400,
-    PHASE2: 5400,
-    FULL: 9000
-};
-
 // Input tracking
 const keys = {};
 
@@ -49,19 +39,27 @@ const keys = {};
 const p1 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: true, color: '#00FFFF' 
+    hitsTaken: 0, active: true, color: '#00FFFF' // Cyan default
 };
 
 const p2 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: false, color: '#FF0000' 
+    hitsTaken: 0, active: false, color: '#FF0000' // Red default
 };
 
 const PHASE_FRAMES = {
     '1': 0, '1.1': 0, '1.2': 740, '1.3': 1560,
     '2': 2700, '2.1': 2700, '2.2': 3600, '2.3': 4500,
     '3': 5700, '3.1': 5700, '3.2': 6800, '3.3': 7900
+};
+
+// Target end frames for dynamic timer calculation
+const TARGET_FRAMES = {
+    '1.1': 800, '1.2': 1600, '1.3': 2400, '1': 2400,
+    '2.1': 3600, '2.2': 4500, '2.3': 5400, '2': 5400,
+    '3.1': 6800, '3.2': 7900, '3.3': 9000, '3': 9000,
+    'full': 9000, 'multiplayer': 9000
 };
 
 function resize() {
@@ -79,26 +77,10 @@ function showScreen(screenId) {
     document.getElementById('hud').style.display = 'none';
 }
 
-function setPlayerColor(playerNum, color) {
-    let errorMsg = document.getElementById('color-error-msg');
-    
-    if (playerNum === 1) {
-        if (color === p2Color) {
-            errorMsg.textContent = "Player 1 cannot pick the same color as Player 2!";
-            return;
-        }
-        p1Color = color;
-        document.getElementById('p1-color-header').style.color = color;
-        errorMsg.textContent = "";
-    } else if (playerNum === 2) {
-        if (color === p1Color) {
-            errorMsg.textContent = "Player 2 cannot pick the same color as Player 1!";
-            return;
-        }
-        p2Color = color;
-        document.getElementById('p2-color-header').style.color = color;
-        errorMsg.textContent = "";
-    }
+function setPlayerColor(color) {
+    playerColor = color;
+    document.getElementById('current-color-text').textContent = color;
+    document.getElementById('current-color-text').style.color = color;
 }
 
 function spawnProjectile(x, y, vx, vy, size, life = Infinity, isBouncy = false) {
@@ -250,15 +232,12 @@ function executePhase1(t) {
         spawnWarning(0, 0, "diag_laser_1", 0, 0, 60); 
         spawnWarning(canvas.width, 0, "diag_laser_2", 0, 0, 60);
     }
-
     if (t === 740) {
         spawnWarning(canvas.width/2, canvas.height/2, "spinner_warn", 0, 80, 60);
     }
-
     if (t === 800) {
         spawnProjectile(100, 100, 6, 6, 50, 800, true); 
     }
-
     if (t > 800 && t < 1600 && t % 4 === 0) {
         let angle = t * 0.15;
         let cx = canvas.width / 2; let cy = canvas.height / 2;
@@ -267,7 +246,6 @@ function executePhase1(t) {
         spawnProjectile(cx, cy, Math.cos(angle + Math.PI)*7, Math.sin(angle + Math.PI)*7, 12);
         spawnProjectile(cx, cy, Math.cos(angle + Math.PI*1.5)*7, Math.sin(angle + Math.PI*1.5)*7, 12);
     }
-
     if (t > 1560 && t < 2360) {
         if (t % 80 === 0) {
             let dir = Math.random() > 0.5 ? 1 : -1;
@@ -309,11 +287,9 @@ function executePhase3(t) {
         if(edge === 3) { px=canvas.width+20; py=Math.random()*canvas.height; vx=-8; vy=(Math.random()-0.5)*6; } 
         spawnProjectile(px, py, vx, vy, Math.random()*12 + 8);
     }
-
     if (t === 6740) {
         spawnWarning(canvas.width / 2, canvas.height / 2, "middle_line", 0, 40, 60);
     }
-
     if (t === 6800) {
         for(let i = 0; i < canvas.width; i += 25) spawnProjectile(i, canvas.height / 2, 0, 0, 15);
     }
@@ -324,14 +300,11 @@ function executePhase3(t) {
         let gap2Y = Math.random() * (canvas.height/2 - 100) + canvas.height/2 + 50;
         spawnWarning(startX === -50 ? 50 : canvas.width - 50, gap1Y, dir, "split_wall", gap2Y, 25);
     }
-    
     if (t === 7900) { projectiles = []; warnings = []; }
-
     if (t > 7960 && t < 9000) {
         if (t % 20 === 0) {
             spawnWarning(p1.x, p1.y, "track", "p1", 0, 30);
             if (gameMode === 'multiplayer' && p2.active) spawnWarning(p2.x, p2.y, "track", "p2", 0, 30);
-            
             if (t % 40 === 0) spawnProjectile(Math.random()*canvas.width, -20, 0, 10, 15);
         }
         if (t % 60 === 0) {
@@ -374,21 +347,21 @@ function executeAttacks() {
     if (gameMode === 'practice') {
         if (selectedPracticePhase === '1.1' && t === 800) gameWon();
         if (selectedPracticePhase === '1.2' && t === 1600) gameWon();
-        if (selectedPracticePhase === '1.3' && t === END_FRAMES.PHASE1) gameWon();
-        if (selectedPracticePhase === '1' && t === END_FRAMES.PHASE1) gameWon();
+        if (selectedPracticePhase === '1.3' && t === 2400) gameWon();
+        if (selectedPracticePhase === '1' && t === 2400) gameWon();
 
         if (selectedPracticePhase === '2.1' && t === 3600) gameWon();
         if (selectedPracticePhase === '2.2' && t === 4500) gameWon();
-        if (selectedPracticePhase === '2.3' && t === END_FRAMES.PHASE2) gameWon();
-        if (selectedPracticePhase === '2' && t === END_FRAMES.PHASE2) gameWon();
+        if (selectedPracticePhase === '2.3' && t === 5400) gameWon();
+        if (selectedPracticePhase === '2' && t === 5400) gameWon();
 
         if (selectedPracticePhase === '3.1' && t === 6800) gameWon();
         if (selectedPracticePhase === '3.2' && t === 7900) gameWon();
-        if (selectedPracticePhase === '3.3' && t === END_FRAMES.FULL) gameWon();
-        if (selectedPracticePhase === '3' && t === END_FRAMES.FULL) gameWon();
+        if (selectedPracticePhase === '3.3' && t === 9000) gameWon();
+        if (selectedPracticePhase === '3' && t === 9000) gameWon();
     }
 
-    if ((gameMode === 'full' || gameMode === 'multiplayer') && t === END_FRAMES.FULL) gameWon();
+    if ((gameMode === 'full' || gameMode === 'multiplayer') && t === 9000) gameWon();
 }
 
 function updatePlayer(player, keysArr) {
@@ -542,6 +515,7 @@ function update() {
     let displayTime = timeSurvived;
     if (gameMode === 'practice') displayTime += Math.floor(PHASE_FRAMES[selectedPracticePhase] / 60);
     
+    // HUD Updates
     document.getElementById('timer-display').innerText = displayTime;
     
     if (currentDifficulty === 'Debug') {
@@ -705,23 +679,18 @@ function startGame(hp, difficultyName) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('debug-hits-display').style.display = 'none';
     resize(); canvas.style.display = 'block'; document.getElementById('hud').style.display = 'flex';
-
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        frameCount = 0; 
-        document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.FULL / 60);
-    } else {
-        frameCount = PHASE_FRAMES[selectedPracticePhase]; 
-        let majorPhase = selectedPracticePhase.charAt(0);
-        if (majorPhase === '1') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.PHASE1 / 60);
-        if (majorPhase === '2') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.PHASE2 / 60);
-        if (majorPhase === '3') document.getElementById('timer-max').innerText = '/ ' + Math.floor(END_FRAMES.FULL / 60);
-    }
-
+    
+    // Set P1 Color based on challenges / defaults
     if (challengeMode === 'invisible') p1.color = '#000000';
     else if (challengeMode === 'bullet-colored') p1.color = '#00FF00';
-    else p1.color = p1Color;
+    else p1.color = playerColor;
 
-    p2.color = p2Color; 
+    // Prevent duplicate colors between players
+    if (p1.color === '#FF0000') {
+        p2.color = '#00FFFF'; // Fallback to Cyan if P1 picked Red
+    } else {
+        p2.color = '#FF0000'; // Default Red
+    }
 
     p1.x = canvas.width / 2 - (gameMode === 'multiplayer' ? 50 : 0); p1.y = canvas.height / 2; 
     p1.hitsTaken = 0; p1.active = true; p1.isInvulnerable = 120;
@@ -741,14 +710,22 @@ function startGame(hp, difficultyName) {
     projectiles = []; warnings = []; gameActive = true; isPaused = false;
     startTime = Date.now(); totalPausedTime = 0;
 
+    // Dynamic Timer Calculation
+    if (gameMode === 'full' || gameMode === 'multiplayer') {
+        frameCount = 0; 
+        document.getElementById('timer-max').innerText = `/ ${Math.floor(TARGET_FRAMES['full'] / 60)}`;
+    } else {
+        frameCount = PHASE_FRAMES[selectedPracticePhase]; 
+        let targetEndFrame = TARGET_FRAMES[selectedPracticePhase] || TARGET_FRAMES[selectedPracticePhase.charAt(0)];
+        document.getElementById('timer-max').innerText = `/ ${Math.floor(targetEndFrame / 60)}`;
+    }
     update();
 }
 
 function retryPractice() { startGame(currentHpSetting, currentDifficulty); }
 
 function gameOver() {
-    gameActive = false; 
-    cancelAnimationFrame(animationId);
+    gameActive = false; cancelAnimationFrame(animationId);
     let challengeText = challengeMode !== 'none' ? ` Challenge - ${challengeMode.charAt(0).toUpperCase() + challengeMode.slice(1)}` : '';
 
     if (gameMode === 'practice') {
@@ -758,8 +735,7 @@ function gameOver() {
         let timeSurvived = Math.floor((Date.now() - startTime - totalPausedTime) / 1000);
         let modeLabel = isMagneticMode ? 'Magnetic Mode' : (gameMode === 'multiplayer' ? 'Multiplayer' : 'Full Fight');
         document.getElementById('death-stats-mode').innerText = `${modeLabel}${challengeText}, ${currentDifficulty}`;
-        document.getElementById('survival-time').innerText = timeSurvived; 
-        showScreen('game-over-screen');
+        document.getElementById('survival-time').innerText = `${timeSurvived}`; showScreen('game-over-screen');
     }
 }
 
