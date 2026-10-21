@@ -247,23 +247,18 @@ window.addEventListener('keyup', (e) => {
 });
 
 function executePhase1(t) {
-    // PHASE 1.1: Merged Original 1.1 & Original 1.2 (Frames 0 to 740)
+    // PHASE 1.1: Original 1.1 & Original 1.2 (Frames 0 to 740)
     if (t === 120) {
-        // Original 1.1 Diag Lasers
         spawnWarning(0, 0, "diag_laser_1", 0, 0, 60); 
         spawnWarning(canvas.width, 0, "diag_laser_2", 0, 0, 60);
-        
-        // Pulled from Original 1.2: Spinner Warn
         spawnWarning(canvas.width/2, canvas.height/2, "spinner_warn", 0, 80, 60);
     }
 
     if (t === 180) {
-        // Pulled from Original 1.2: Bouncy Projectile
         spawnProjectile(100, 100, 6, 6, 50, 800, true); 
     }
 
     if (t > 180 && t < 740 && t % 4 === 0) {
-        // Pulled from Original 1.2: Spinning Stream
         let angle = t * 0.15;
         let cx = canvas.width / 2; let cy = canvas.height / 2;
         spawnProjectile(cx, cy, Math.cos(angle)*7, Math.sin(angle)*7, 12);
@@ -272,31 +267,38 @@ function executePhase1(t) {
         spawnProjectile(cx, cy, Math.cos(angle + Math.PI*1.5)*7, Math.sin(angle + Math.PI*1.5)*7, 12);
     }
 
-    // PHASE 1.2: NEW Multiplayer-Calibrated Pattern (Frames 740 to 1560)
-    if (t >= 740 && t < 1560) {
-        // Dynamic Targeted Spreads: Checks for active players
-        if (t % 45 === 0) {
+    // --- TRANSITION CLEAR ---
+    if (t === 740) {
+        // Wipes the board clean so Phase 1.1 elements don't overlap with Phase 1.2
+        projectiles = []; 
+        warnings = [];
+    }
+
+    // PHASE 1.2: NEW "Spicy" Pattern (Frames 740 to 1560)
+    if (t > 740 && t < 1560) {
+        // Spicy Element 1: Sine-wave sweepers crossing the screen rapidly from both sides
+        if (t % 8 === 0) {
+            let sweepY = (Math.sin(t * 0.05) * (canvas.height / 2.5)) + (canvas.height / 2);
+            spawnProjectile(0, sweepY, 9, 0, 12); // Left to right
+            spawnProjectile(canvas.width, canvas.height - sweepY, -9, 0, 12); // Right to left
+        }
+        
+        // Spicy Element 2: Tracker Rings closing in on active players
+        if (t % 100 === 0) {
             let activePlayers = [p1];
-            // Calibrates for multiplayer by adding P2 to the target list if active
-            if (gameMode === 'multiplayer' && p2.active) activePlayers.push(p2);
+            if (typeof gameMode !== 'undefined' && gameMode === 'multiplayer' && p2.active) {
+                activePlayers.push(p2);
+            }
             
             activePlayers.forEach(player => {
-                let angle = Math.atan2(player.y - 0, player.x - canvas.width / 2);
-                // Fires a 3-way spread towards each active player
-                for (let offset = -0.2; offset <= 0.2; offset += 0.2) {
-                    spawnProjectile(canvas.width / 2, 0, Math.cos(angle + offset) * 7, Math.sin(angle + offset) * 7, 15);
+                // Spawns a wide ring of bullets 400px away that slowly converge on the player's current position
+                for (let i = 0; i < Math.PI * 2; i += Math.PI / 8) {
+                    let startX = player.x + Math.cos(i) * 400;
+                    let startY = player.y + Math.sin(i) * 400;
+                    let angleToPlayer = Math.atan2(player.y - startY, player.x - startX);
+                    spawnProjectile(startX, startY, Math.cos(angleToPlayer) * 4, Math.sin(angleToPlayer) * 4, 15);
                 }
             });
-        }
-
-        // Dropping horizontal walls with randomized safe gaps
-        if (t % 60 === 0) {
-            let gapX = Math.random() * (canvas.width - 200) + 100;
-            for (let x = 0; x < canvas.width; x += 35) {
-                if (Math.abs(x - gapX) > 80) { // Leaves a 160px safe corridor
-                    spawnProjectile(x, 0, 0, 5, 14);
-                }
-            }
         }
     }
 
