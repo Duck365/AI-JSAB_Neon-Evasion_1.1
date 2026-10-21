@@ -162,12 +162,9 @@ function updateRobot(t) {
                 let dy = p2.y - w.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
                 
-                // If within danger radius, calculate vector and dash AWAY
                 if (dist < (w.size || 40) + 50 && p2.dashCooldown <= 0) {
-                    // Prevent division by zero if perfectly centered
                     if (dist === 0) { dx = 1; dy = 0; dist = 1; }
-                    
-                    p2.x += (dx / dist) * 350; // Dash 350 pixels directly away
+                    p2.x += (dx / dist) * 350; 
                     p2.y += (dy / dist) * 350;
                     p2.dashCooldown = p2.maxDashCooldown;
                     p2.aiTargetX = p2.x; 
@@ -177,20 +174,21 @@ function updateRobot(t) {
         }
     }
 
-    // Phase 1.1: Hover in the safe quadrant (0 - 740)
+    // Phase 1.1: Hover in the top-middle safe zone (0 - 740)
     if (t >= 0 && t < 740) {
         p2.aiState = 'path';
-        // Park the robot in the top-right quadrant, safely away from the X lasers
-        p2.aiTargetX = canvas.width * 0.8;
-        p2.aiTargetY = canvas.height * 0.2;
+        // Place the robot in the top-middle to avoid the diagonal lines completely
+        p2.aiTargetX = canvas.width / 2;
+        p2.aiTargetY = canvas.height * 0.15;
     }
-    // Phase 1.2: Path & Dodge (740 - 1560)
+    // Phase 1.2: Path & Max Dash Speed (740 - 1560)
     else if (t >= 740 && t < 1560) {
         p2.aiState = 'path';
         p2.aiTargetX = canvas.width / 2;
         p2.aiTargetY = canvas.height / 4; 
         
-        if (t % 100 === 80 && p2.dashCooldown <= 0) {
+        // Dashing as fast as mathematically possible (immediately off cooldown)
+        if (p2.dashCooldown <= 0) {
             p2.x = canvas.width / 2 + (Math.random() > 0.5 ? 250 : -250);
             p2.y = canvas.height / 2 + (Math.random() > 0.5 ? 200 : -200);
             p2.dashCooldown = p2.maxDashCooldown;
@@ -215,12 +213,12 @@ function updateRobot(t) {
             p2.x = canvas.width / 2; p2.y = canvas.height / 2; 
             p2.aiTargetX = p2.x; p2.aiTargetY = p2.y; 
         }
-        // Walls spawn at 2460, 2470, 2480. Delaying dashes slightly and extending distance.
-        if (t === 2466 && p2.dashCooldown <= 0) { 
-            p2.x -= 400; p2.dashCooldown = p2.maxDashCooldown; // Massive dash left
+        // Delayed to mimic human reaction time: Left... Wait... Right
+        if (t === 2475 && p2.dashCooldown <= 0) { 
+            p2.x -= 400; p2.dashCooldown = p2.maxDashCooldown; // Dash left
         } 
-        if (t === 2486 && p2.dashCooldown <= 0) { 
-            p2.x += 800; p2.dashCooldown = p2.maxDashCooldown; // Massive dash back right
+        if (t === 2515 && p2.dashCooldown <= 0) { 
+            p2.x += 800; p2.dashCooldown = p2.maxDashCooldown; // Dash right
         }
     }
     // Phase 2.1: Random Bottom - MORE TELEPORTING (2700 - 3600)
@@ -230,7 +228,7 @@ function updateRobot(t) {
             p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
             p2.aiTargetY = canvas.height - (Math.random() * 150 + 50);
         }
-        if (t % 100 === 0 && p2.dashCooldown <= 0) { // Halved the wait time for teleporting
+        if (t % 100 === 0 && p2.dashCooldown <= 0) {
             p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
             p2.dashCooldown = p2.maxDashCooldown;
         }
