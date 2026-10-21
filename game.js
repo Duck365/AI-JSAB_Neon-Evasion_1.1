@@ -145,7 +145,9 @@ window.addEventListener('keyup', (e) => {
 function updateRobot(t) {
     if (!p2.active) return;
 
-    // Safety Boundary Check
+    if (typeof p2.nextDashDir === 'undefined') p2.nextDashDir = -1; 
+    if (typeof p2.crushDashPhase === 'undefined') p2.crushDashPhase = -1;
+
     let margin = 40;
     if (p2.aiState.startsWith('random') && (p2.x < margin || p2.x > canvas.width - margin || p2.y < margin || p2.y > canvas.height - margin)) {
         p2.x = canvas.width / 2;
@@ -154,10 +156,9 @@ function updateRobot(t) {
         p2.aiTargetY = p2.y;
     }
 
-    // Active Danger Evasion (Calculated Escape for Firecrackers/Rings)
     if (p2.aiState === 'random' || p2.aiState === 'bottom_dash') {
         for (let w of warnings) {
-            if ((w.vx === "firecracker" || w.vx === "ring") && w.timer < 35) {
+            if ((w.vx === "firecracker") && w.timer < 35) {
                 let dx = p2.x - w.x;
                 let dy = p2.y - w.y;
                 let dist = Math.sqrt(dx*dx + dy*dy);
@@ -174,37 +175,49 @@ function updateRobot(t) {
         }
     }
 
-    // Phase 1.1: Position locked to the image coordinates (0 - 740)
+    // Phase 1.1: Exact spot based on image_602cb9.jpg (0 - 740)
     if (t >= 0 && t < 740) {
         p2.aiState = 'path';
-        // Positioned at the bottom-left-center based on the visual
-        p2.aiTargetX = canvas.width * 0.35; 
-        p2.aiTargetY = canvas.height - 40;
+        p2.aiTargetX = canvas.width * 0.35; // Bottom-center-left based on visual[cite: 11]
+        p2.aiTargetY = canvas.height * 0.92; // Near the very bottom edge[cite: 11]
     }
-    // Phase 1.2: Wait x4, Dash Left, Wait x4, Dash Right (740 - 1560)
+    // Phase 1.2: Stationary Evasion for Rings (740 - 1560)
     else if (t >= 740 && t < 1560) {
-        p2.aiState = 'path';
-        p2.aiTargetY = canvas.height - 40; 
-        p2.aiTargetX = canvas.width * 0.35; 
+        p2.aiState = 'stationary';
+        p2.aiTargetX = p2.x; 
+        p2.aiTargetY = p2.y;
         
-        // Assuming 1 "wait" unit = 20 frames. Wait x4 = 80 frames. Cycle = 160.
-        if (t % 160 === 80 && p2.dashCooldown <= 0) {
-            p2.x -= 400; // Dash Left
-            p2.dashCooldown = p2.maxDashCooldown;
-        } else if (t % 160 === 0 && p2.dashCooldown <= 0) {
-            p2.x += 400; // Dash Right
-            p2.dashCooldown = p2.maxDashCooldown;
+        for (let w of warnings) {
+            if (w.vx === "ring") {
+                let dx = p2.x - w.x;
+                let dy = p2.y - w.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                
+                if (dist < p2.size * 2 && p2.dashCooldown <= 0) {
+                    p2.x += p2.nextDashDir * 400; 
+                    p2.nextDashDir *= -1; // Alternate left/right
+                    p2.dashCooldown = p2.maxDashCooldown;
+                    break;
+                }
+            }
         }
     }
-    // Phase 1.3: Random Middle (1560 - 2400)
+    // Phase 1.3: Frequent Teleport Towards Walls (1560 - 2400)
     else if (t >= 1560 && t < 2400) {
         p2.aiState = 'random';
         if (t % 50 === 0) { 
             p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
             p2.aiTargetY = canvas.height/2 + (Math.random() * 400 - 200);
         }
-        if (t % 90 === 0 && p2.dashCooldown <= 0) {
-            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+        if (t % 45 === 0 && p2.dashCooldown <= 0) { // Teleport more often
+            let targetWall = warnings[0]; 
+            if (targetWall) {
+                let dx = targetWall.x - p2.x;
+                p2.x += Math.sign(dx) * 200; // Dash towards wall direction
+            } else {
+                p2.x = p2.aiTargetX; 
+            }
+            p2.y = p2.aiTargetY;
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
@@ -214,13 +227,18 @@ function updateRobot(t) {
         if (t === 2401) { 
             p2.x = canvas.width / 2; p2.y = canvas.height / 2; 
             p2.aiTargetX = p2.x; p2.aiTargetY = p2.y; 
+            p2.crushDashPhase = -1; // Reset to dash left first
         }
-        // Wait x5 (100 frames)... dash left... Wait x3 (60 frames)... dash right
-        if (t === 2500 && p2.dashCooldown <= 0) { 
-            p2.x -= 400; p2.dashCooldown = p2.maxDashCooldown; // Dash left
-        } 
-        if (t === 2560 && p2.dashCooldown <= 0) { 
-            p2.x += 800; p2.dashCooldown = p2.maxDashCooldown; // Dash right
+        
+        let wallDistanceThreshold = p2.size * 1.5;
+        for (let w of warnings) {
+            let dx = w.x - p2.x;
+            if (Math.abs(dx) < wallDistanceThreshold && p2.dashCooldown <= 0) {
+                p2.x += p2.crushDashPhase * 400; 
+                p2.crushDashPhase *= -1; // Alternate direction for next wall
+                p2.dashCooldown = p2.maxDashCooldown;
+                break;
+            }
         }
     }
     // Phase 2.1: Random Bottom (2700 - 3600)
@@ -271,31 +289,20 @@ function updateRobot(t) {
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phase 3.2: Reactive Wall Phasing (6800 - 7900)
+    // Phase 3.2: Reactive Wall Phasing & Move Top Center (6800 - 7900)
     else if (t >= 6800 && t < 7900) {
-        p2.aiState = 'random_side';
-        p2.aiTargetY = canvas.height / 4; 
+        p2.aiState = 'path';
+        p2.aiTargetX = canvas.width / 2;
+        p2.aiTargetY = canvas.height * 0.15; // Move towards top center
         
-        let wallDistanceThreshold = p2.size * 3; // Exactly 3 square lengths (60 pixels)
-        let dashed = false;
+        let wallDistanceThreshold = p2.size * 2; 
 
-        // Assuming warnings array contains the wall data. If not, this logic applies to whichever array holds the walls.
         for (let w of warnings) {
             let dx = w.x - p2.x;
-            // If wall is horizontally approaching and within 3 squares
             if (Math.abs(dx) < wallDistanceThreshold && p2.dashCooldown <= 0) {
-                // Dash directly INTO the wall to phase through it
-                p2.x += Math.sign(dx) * 350; 
+                p2.x += Math.sign(dx) * 350; // Teleport towards wall
                 p2.dashCooldown = p2.maxDashCooldown;
-                dashed = true;
                 break;
-            }
-        }
-
-        // Default behavior if no walls are within 3 squares
-        if (!dashed) {
-            if (t % 60 === 0) {
-                p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
             }
         }
     }
@@ -306,24 +313,21 @@ function updateRobot(t) {
         p2.aiTargetY = canvas.height / 2 + Math.sin(t * 0.05) * 150;
     }
 
-    // Move Robot towards calculated target
     let dx = p2.aiTargetX - p2.x;
     let dy = p2.aiTargetY - p2.y;
     let dist = Math.sqrt(dx*dx + dy*dy);
     
-    if (dist > p2.speed) {
+    if (dist > p2.speed && p2.aiState !== 'stationary') {
         p2.x += (dx / dist) * p2.speed;
         p2.y += (dy / dist) * p2.speed;
-    } else {
+    } else if (p2.aiState !== 'stationary') {
         p2.x = p2.aiTargetX;
         p2.y = p2.aiTargetY;
     }
 
-    // Cooldown management
     if (p2.dashCooldown > 0) p2.dashCooldown--;
     if (p2.isInvulnerable > 0) p2.isInvulnerable--;
     
-    // Final hard clamp to screen boundaries
     p2.x = Math.max(p2.size/2, Math.min(canvas.width - p2.size/2, p2.x));
     p2.y = Math.max(p2.size/2, Math.min(canvas.height - p2.size/2, p2.y));
 }
