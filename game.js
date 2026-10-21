@@ -154,7 +154,7 @@ function updateRobot(t) {
         p2.aiTargetY = p2.y;
     }
 
-    // Active Danger Evasion (Calculated Escape)
+    // Active Danger Evasion (Calculated Escape for Firecrackers/Rings)
     if (p2.aiState === 'random' || p2.aiState === 'bottom_dash') {
         for (let w of warnings) {
             if ((w.vx === "firecracker" || w.vx === "ring") && w.timer < 35) {
@@ -174,24 +174,25 @@ function updateRobot(t) {
         }
     }
 
-    // Phase 1.1: Hover in the top-middle safe zone (0 - 740)
+    // Phase 1.1: Position locked to the image coordinates (0 - 740)
     if (t >= 0 && t < 740) {
         p2.aiState = 'path';
-        p2.aiTargetX = canvas.width / 2;
-        p2.aiTargetY = canvas.height * 0.15;
+        // Positioned at the bottom-left-center based on the visual
+        p2.aiTargetX = canvas.width * 0.35; 
+        p2.aiTargetY = canvas.height - 40;
     }
-    // Phase 1.2: Wait, Wait, Dash Left, Wait, Wait, Dash Right (740 - 1560)
+    // Phase 1.2: Wait x4, Dash Left, Wait x4, Dash Right (740 - 1560)
     else if (t >= 740 && t < 1560) {
         p2.aiState = 'path';
-        p2.aiTargetY = canvas.height - 40; // Very bottom
-        p2.aiTargetX = canvas.width / 2;
+        p2.aiTargetY = canvas.height - 40; 
+        p2.aiTargetX = canvas.width * 0.35; 
         
-        // Spread out the timing to simulate the wait rhythm
-        if (t % 160 === 0 && p2.dashCooldown <= 0) {
-            p2.x += 400; // Dash Right
-            p2.dashCooldown = p2.maxDashCooldown;
-        } else if (t % 160 === 80 && p2.dashCooldown <= 0) {
+        // Assuming 1 "wait" unit = 20 frames. Wait x4 = 80 frames. Cycle = 160.
+        if (t % 160 === 80 && p2.dashCooldown <= 0) {
             p2.x -= 400; // Dash Left
+            p2.dashCooldown = p2.maxDashCooldown;
+        } else if (t % 160 === 0 && p2.dashCooldown <= 0) {
+            p2.x += 400; // Dash Right
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
@@ -214,11 +215,11 @@ function updateRobot(t) {
             p2.x = canvas.width / 2; p2.y = canvas.height / 2; 
             p2.aiTargetX = p2.x; p2.aiTargetY = p2.y; 
         }
-        // Wait x4... dash left... wait, wait... dash right
-        if (t === 2490 && p2.dashCooldown <= 0) { 
+        // Wait x5 (100 frames)... dash left... Wait x3 (60 frames)... dash right
+        if (t === 2500 && p2.dashCooldown <= 0) { 
             p2.x -= 400; p2.dashCooldown = p2.maxDashCooldown; // Dash left
         } 
-        if (t === 2530 && p2.dashCooldown <= 0) { 
+        if (t === 2560 && p2.dashCooldown <= 0) { 
             p2.x += 800; p2.dashCooldown = p2.maxDashCooldown; // Dash right
         }
     }
@@ -270,18 +271,32 @@ function updateRobot(t) {
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phase 3.2: Max Speed Horizontal Teleport Only (6800 - 7900)
+    // Phase 3.2: Reactive Wall Phasing (6800 - 7900)
     else if (t >= 6800 && t < 7900) {
         p2.aiState = 'random_side';
         p2.aiTargetY = canvas.height / 4; 
         
-        if (t % 60 === 0) {
-            p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
+        let wallDistanceThreshold = p2.size * 3; // Exactly 3 square lengths (60 pixels)
+        let dashed = false;
+
+        // Assuming warnings array contains the wall data. If not, this logic applies to whichever array holds the walls.
+        for (let w of warnings) {
+            let dx = w.x - p2.x;
+            // If wall is horizontally approaching and within 3 squares
+            if (Math.abs(dx) < wallDistanceThreshold && p2.dashCooldown <= 0) {
+                // Dash directly INTO the wall to phase through it
+                p2.x += Math.sign(dx) * 350; 
+                p2.dashCooldown = p2.maxDashCooldown;
+                dashed = true;
+                break;
+            }
         }
-        // Teleport continuously back and forth across the screen the exact frame cooldown ends
-        if (p2.dashCooldown <= 0) {
-            p2.x = canvas.width - p2.x; 
-            p2.dashCooldown = p2.maxDashCooldown;
+
+        // Default behavior if no walls are within 3 squares
+        if (!dashed) {
+            if (t % 60 === 0) {
+                p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
+            }
         }
     }
     // Phase 3.3: Circle Spin (7960 - 9000)
