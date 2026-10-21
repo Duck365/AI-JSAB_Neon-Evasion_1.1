@@ -112,53 +112,58 @@
     <!-- Customize Screen -->
     <div id="customize-screen" class="screen">
         <h2>SELECT PLAYER COLORS</h2>
-        <div style="display: flex; gap: 50px; justify-content: center; align-items: flex-start; margin-bottom: 20px;">
-            
-            <!-- Player 1 Palette -->
-            <div>
-                <h3 style="color: #00FFFF;" id="p1-color-header">PLAYER 1</h3>
-                <div class="color-grid" id="p1-palette">
+        <div class="palettes-container">
+            <div class="palette-box">
+                <h3>Player 1</h3>
+                <div class="color-grid">
+                    <!-- Row 1 -->
                     <div class="color-btn" style="background: #FF0000;" onclick="setPlayerColor(1, '#FF0000')"></div>
                     <div class="color-btn" style="background: #FF7F00;" onclick="setPlayerColor(1, '#FF7F00')"></div>
                     <div class="color-btn" style="background: #FFFF00;" onclick="setPlayerColor(1, '#FFFF00')"></div>
                     <div class="color-btn" style="background: #7FFF00;" onclick="setPlayerColor(1, '#7FFF00')"></div>
                     <div class="color-btn" style="background: #00FF7F;" onclick="setPlayerColor(1, '#00FF7F')"></div>
+                    <!-- Row 2 -->
                     <div class="color-btn" style="background: #00FFFF;" onclick="setPlayerColor(1, '#00FFFF')"></div>
                     <div class="color-btn" style="background: #007FFF;" onclick="setPlayerColor(1, '#007FFF')"></div>
                     <div class="color-btn" style="background: #0000FF;" onclick="setPlayerColor(1, '#0000FF')"></div>
                     <div class="color-btn" style="background: #7F00FF;" onclick="setPlayerColor(1, '#7F00FF')"></div>
                     <div class="color-btn" style="background: #FF00FF;" onclick="setPlayerColor(1, '#FF00FF')"></div>
+                    <!-- Row 3 -->
                     <div class="color-btn" style="background: #FF007F;" onclick="setPlayerColor(1, '#FF007F')"></div>
                     <div class="color-btn" style="background: #FFFFFF;" onclick="setPlayerColor(1, '#FFFFFF')"></div>
                     <div class="color-btn" style="background: #C0C0C0;" onclick="setPlayerColor(1, '#C0C0C0')"></div>
                     <div class="color-btn" style="background: #808080;" onclick="setPlayerColor(1, '#808080')"></div>
                     <div class="color-btn" style="background: #4B0082;" onclick="setPlayerColor(1, '#4B0082')"></div>
                 </div>
+                <p>P1 Color: <span id="p1-color-text" style="color: #00FFFF;">#00FFFF</span></p>
             </div>
 
-            <!-- Player 2 Palette -->
-            <div>
-                <h3 style="color: #FF0000;" id="p2-color-header">PLAYER 2</h3>
-                <div class="color-grid" id="p2-palette">
+            <div class="palette-box">
+                <h3>Player 2</h3>
+                <div class="color-grid">
+                    <!-- Row 1 -->
                     <div class="color-btn" style="background: #FF0000;" onclick="setPlayerColor(2, '#FF0000')"></div>
                     <div class="color-btn" style="background: #FF7F00;" onclick="setPlayerColor(2, '#FF7F00')"></div>
                     <div class="color-btn" style="background: #FFFF00;" onclick="setPlayerColor(2, '#FFFF00')"></div>
                     <div class="color-btn" style="background: #7FFF00;" onclick="setPlayerColor(2, '#7FFF00')"></div>
                     <div class="color-btn" style="background: #00FF7F;" onclick="setPlayerColor(2, '#00FF7F')"></div>
+                    <!-- Row 2 -->
                     <div class="color-btn" style="background: #00FFFF;" onclick="setPlayerColor(2, '#00FFFF')"></div>
                     <div class="color-btn" style="background: #007FFF;" onclick="setPlayerColor(2, '#007FFF')"></div>
                     <div class="color-btn" style="background: #0000FF;" onclick="setPlayerColor(2, '#0000FF')"></div>
                     <div class="color-btn" style="background: #7F00FF;" onclick="setPlayerColor(2, '#7F00FF')"></div>
                     <div class="color-btn" style="background: #FF00FF;" onclick="setPlayerColor(2, '#FF00FF')"></div>
+                    <!-- Row 3 -->
                     <div class="color-btn" style="background: #FF007F;" onclick="setPlayerColor(2, '#FF007F')"></div>
                     <div class="color-btn" style="background: #FFFFFF;" onclick="setPlayerColor(2, '#FFFFFF')"></div>
                     <div class="color-btn" style="background: #C0C0C0;" onclick="setPlayerColor(2, '#C0C0C0')"></div>
                     <div class="color-btn" style="background: #808080;" onclick="setPlayerColor(2, '#808080')"></div>
                     <div class="color-btn" style="background: #4B0082;" onclick="setPlayerColor(2, '#4B0082')"></div>
                 </div>
+                <p>P2 Color: <span id="p2-color-text" style="color: #FF0000;">#FF0000</span></p>
             </div>
         </div>
-        <p id="color-error-msg" style="color: red; height: 2rem; margin: 0;"></p>
+        <p id="color-error-msg" style="color: red; display: none;">Players cannot select the same color!</p>
         <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
     </div>
 
@@ -218,7 +223,7 @@
 
     <!-- Game Canvas & HUD -->
     <div id="hud">
-        <div>Time: <span id="timer-display">0</span><span id="timer-max"></span></div>
+        <div>Time: <span id="timer-display">0</span> <span id="timer-max">/ 150</span></div>
         <div>HP: <span id="hp-display">5</span></div>
     </div>
     <canvas id="gameCanvas"></canvas>
