@@ -38,7 +38,13 @@ const p1 = {
 const p2 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: true, color: '#808080' // Hardcoded Robot Color
+    hitsTaken: 0, active: true, color: '#808080',
+    
+    // AI Specific tracking
+    aiTargetX: canvas.width / 2, 
+    aiTargetY: canvas.height / 2,
+    aiState: 'path', 
+    aiTimer: 0 
 };
 
 function resize() {
@@ -138,41 +144,118 @@ window.addEventListener('keyup', (e) => {
 // ==========================================
 function updateRobot(t) {
     if (!p2.active) return;
-    
-    let targetX = p2.x;
-    let targetY = p2.y;
 
-    // Phase 1.1 (0 - 740)
+    // Safety Boundary Check - Teleport to middle if too close to edge during random phases
+    let margin = 30;
+    if (p2.aiState === 'random' && (p2.x < margin || p2.x > canvas.width - margin || p2.y < margin || p2.y > canvas.height - margin)) {
+        p2.x = canvas.width / 2;
+        p2.y = canvas.height / 2;
+        p2.aiTargetX = p2.x;
+        p2.aiTargetY = p2.y;
+    }
+
+    // Phase 1.1: Path (0 - 740)
     if (t >= 0 && t < 740) {
-        // Simple figure-8 to test the robot's movement
-        targetX = canvas.width / 2 + Math.cos(t * 0.02) * 200;
-        targetY = canvas.height / 2 + Math.sin(t * 0.04) * 150;
+        p2.aiState = 'path';
+        p2.aiTargetX = canvas.width / 2 + Math.cos(t * 0.02) * 200;
+        p2.aiTargetY = canvas.height / 2 + Math.sin(t * 0.04) * 150;
     }
-    // Phase 1.2 (740 - 1560)
+    // Phase 1.2: Path & Dodge (740 - 1560)
     else if (t >= 740 && t < 1560) {
-        // Dodge the spicy sweeps by sticking to the top or bottom
-        targetX = canvas.width / 2;
-        targetY = canvas.height / 4; 
+        p2.aiState = 'path';
+        p2.aiTargetX = canvas.width / 2;
+        p2.aiTargetY = canvas.height / 4; 
+        
+        // Teleport escape when homing bullets close in
+        if (t % 100 === 80 && p2.dashCooldown <= 0) {
+            p2.x = canvas.width / 2 + (Math.random() > 0.5 ? 200 : -200);
+            p2.y = canvas.height / 2 + (Math.random() > 0.5 ? 200 : -200);
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // Phase 1.3: Random Middle (1560 - 2400)
+    else if (t >= 1560 && t < 2400) {
+        p2.aiState = 'random';
+        if (t % 60 === 0) { // Pick new random spot near middle
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
+            p2.aiTargetY = canvas.height/2 + (Math.random() * 300 - 150);
+        }
+        if (t % 180 === 0 && p2.dashCooldown <= 0) { // Occasional teleport
+            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // 5-Second Transition Buffer (2400 - 2700)
+    else if (t >= 2400 && t < 2700) {
+        p2.aiState = 'transition';
+        p2.isInvulnerable = 10; // Immune during transition
+        if (t === 2401) { // Teleport to starting position for next phase
+            p2.x = canvas.width / 2; p2.y = canvas.height - 100;
+            p2.aiTargetX = p2.x; p2.aiTargetY = p2.y;
+        }
+    }
+    // Phase 2.1: Random Bottom (2700 - 3600)
+    else if (t >= 2700 && t < 3600) {
+        p2.aiState = 'random';
+        if (t % 60 === 0) {
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
+            p2.aiTargetY = canvas.height - (Math.random() * 150 + 50);
+        }
+        if (t % 200 === 0 && p2.dashCooldown <= 0) {
+            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // Phases 2.2, 2.3, 3.1: Random Middle
+    else if ((t >= 3600 && t < 5400) || (t >= 5700 && t < 6800)) {
+        p2.aiState = 'random';
+        if (t % 50 === 0) {
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
+            p2.aiTargetY = canvas.height/2 + (Math.random() * 300 - 150);
+        }
+        if (t % 150 === 0 && p2.dashCooldown <= 0) {
+            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // Phase 3.2: Top/Bottom Half Random (6800 - 7900)
+    else if (t >= 6800 && t < 7900) {
+        p2.aiState = 'random';
+        if (t % 80 === 0) {
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 600 - 300);
+            // Flip between top and bottom halves
+            p2.aiTargetY = Math.random() > 0.5 ? canvas.height/4 : canvas.height*0.75; 
+        }
+        if (t % 160 === 0 && p2.dashCooldown <= 0) {
+            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // Phase 3.3: Circle Spin (7960 - 9000)
+    else if (t >= 7960 && t < 9000) {
+        p2.aiState = 'path';
+        p2.aiTargetX = canvas.width / 2 + Math.cos(t * 0.05) * 150;
+        p2.aiTargetY = canvas.height / 2 + Math.sin(t * 0.05) * 150;
     }
 
-    // Move Robot towards target
-    let dx = targetX - p2.x;
-    let dy = targetY - p2.y;
+    // Move Robot towards calculated target
+    let dx = p2.aiTargetX - p2.x;
+    let dy = p2.aiTargetY - p2.y;
     let dist = Math.sqrt(dx*dx + dy*dy);
     
     if (dist > p2.speed) {
         p2.x += (dx / dist) * p2.speed;
         p2.y += (dy / dist) * p2.speed;
     } else {
-        p2.x = targetX;
-        p2.y = targetY;
+        p2.x = p2.aiTargetX;
+        p2.y = p2.aiTargetY;
     }
 
-    // Decrease robot cooldowns
+    // Cooldown management
     if (p2.dashCooldown > 0) p2.dashCooldown--;
     if (p2.isInvulnerable > 0) p2.isInvulnerable--;
     
-    // Safety Boundary Check
+    // Final hard clamp to screen boundaries
     p2.x = Math.max(p2.size/2, Math.min(canvas.width - p2.size/2, p2.x));
     p2.y = Math.max(p2.size/2, Math.min(canvas.height - p2.size/2, p2.y));
 }
