@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Evasion - Modular Bullet Hell</title>
+    <title>Neon Evasion - Robot Mode</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,111 +11,19 @@
 <div id="game-container">
     <!-- Main Menu -->
     <div id="menu-screen" class="screen active">
-        <h1>NEON EVASION</h1>
-        <button class="main-btn" onclick="setupMode('full'); showScreen('difficulty-screen')">Full Fight</button>
-        <button class="main-btn" onclick="showScreen('practice-phase-screen')">Practice</button>
-        <button class="main-btn" onclick="showScreen('extras-screen')">Extras</button>
+        <h1>NEON EVASION (ROBOT)</h1>
+        <!-- Launches directly into Debug difficulty -->
+        <button class="main-btn" onclick="startGame('Debug', 'Debug')">ROBOT MODE</button>
         <button class="main-btn" onclick="showScreen('customize-screen')">Customize</button>
         <button class="main-btn" onclick="showScreen('keybinds-screen')">Keybinds</button>
     </div>
 
-    <!-- Practice Phase Selection Screen -->
-    <div id="practice-phase-screen" class="screen">
-        <h2>SELECT PHASE TO PRACTICE</h2>
-        
-        <div class="phase-row">
-            <button onclick="setupMode('practice', '1'); showScreen('difficulty-screen')">Phase 1</button>
-            <button onclick="setupMode('practice', '1.1'); showScreen('difficulty-screen')">1.1</button>
-            <button onclick="setupMode('practice', '1.2'); showScreen('difficulty-screen')">1.2</button>
-            <button onclick="setupMode('practice', '1.3'); showScreen('difficulty-screen')">1.3</button>
-        </div>
-        <div class="phase-row">
-            <button onclick="setupMode('practice', '2'); showScreen('difficulty-screen')">Phase 2</button>
-            <button onclick="setupMode('practice', '2.1'); showScreen('difficulty-screen')">2.1</button>
-            <button onclick="setupMode('practice', '2.2'); showScreen('difficulty-screen')">2.2</button>
-            <button onclick="setupMode('practice', '2.3'); showScreen('difficulty-screen')">2.3</button>
-        </div>
-        <div class="phase-row">
-            <button onclick="setupMode('practice', '3'); showScreen('difficulty-screen')">Phase 3</button>
-            <button onclick="setupMode('practice', '3.1'); showScreen('difficulty-screen')">3.1</button>
-            <button onclick="setupMode('practice', '3.2'); showScreen('difficulty-screen')">3.2</button>
-            <button onclick="setupMode('practice', '3.3'); showScreen('difficulty-screen')">3.3</button>
-        </div>
-
-        <br>
-        <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
-    </div>
-
-    <!-- Extras Screen -->
-    <div id="extras-screen" class="screen">
-        <h2>EXTRAS</h2>
-        <button class="main-btn" onclick="showScreen('special-screen')">Special</button>
-        <button class="main-btn" onclick="showScreen('challenges-screen')">Challenges</button>
-        <br><br>
-        <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
-    </div>
-
-    <!-- Special Screen -->
-    <div id="special-screen" class="screen">
-        <h2>SPECIAL MODES</h2>
-        <button class="main-btn" onclick="setupMode('multiplayer'); showScreen('difficulty-screen')">Multiplayer (Local Duo)</button>
-        <button class="main-btn" onclick="showScreen('magnetic-screen')">Magnetic Mode (Multiplayer)</button>
-        <br><br>
-        <button class="main-btn" onclick="showScreen('extras-screen')">Back</button>
-    </div>
-
-    <!-- Magnetic Mode Screen -->
-    <div id="magnetic-screen" class="screen">
-        <h2>MAGNETIC MODE (MULTIPLAYER)</h2>
-        <p>Touch each other before the timer runs out, or take a magnetic hit!</p>
-        <button class="main-btn" onclick="startMagneticMode(1200)">20 Seconds (Easy)</button>
-        <button class="main-btn" onclick="startMagneticMode(600)">10 Seconds (Normal)</button>
-        <button class="main-btn" onclick="startMagneticMode(300)">5 Seconds (Hard)</button>
-        <button class="main-btn" onclick="startMagneticMode(60)">1 Second (Twins & Hardcore)</button>
-        <br><br>
-        <button class="main-btn" onclick="showScreen('special-screen')">Back</button>
-    </div>
-
-    <!-- Challenges Screen -->
-    <div id="challenges-screen" class="screen">
-        <h2>CHALLENGES</h2>
-        <button class="main-btn" onclick="setupMode('invisible'); showScreen('difficulty-screen')">Invisible</button>
-        <button class="main-btn" onclick="setupMode('bullet-colored'); showScreen('difficulty-screen')">Bullet Colored</button>
-        <br><br>
-        <button class="main-btn" onclick="showScreen('extras-screen')">Back</button>
-    </div>
-
-    <!-- Difficulty Selector Screen -->
-    <div id="difficulty-screen" class="screen">
-        <h2>SELECT DIFFICULTY</h2>
-        <button onclick="startGame(10, 'Easy')">Easy (10 Hits)</button>
-        <button onclick="startGame(8, 'Normal')">Normal (8 Hits)</button>
-        <button onclick="startGame(5, 'Hard')">Hard (5 Hits)</button>
-        <button onclick="startGame(1, 'Hardcore')">Hardcore (1 Hit)</button>
-        <button onclick="startGame('Debug', 'Debug')">Debug (Invincible)</button>
-        
-        <div style="margin-top: 20px;">
-            <button onclick="toggleCustomHp()">Set HP</button>
-            <div id="custom-hp-container" style="display: none; margin-top: 15px;">
-                <div class="custom-hp-row">
-                    Enter the amount of HP you want: 
-                    <input type="number" id="custom-hp-input" min="1" step="1" oninput="handleCustomHpInput()">
-                </div>
-                <button id="custom-hp-btn" class="main-btn" disabled onclick="startCustomGame()">Start</button>
-            </div>
-        </div>
-
-        <br><br>
-        <button class="main-btn" onclick="goBackFromDifficulty()">Back</button>
-    </div>
-
     <!-- Customize Screen -->
     <div id="customize-screen" class="screen">
-        <h2>SELECT PLAYER COLORS</h2>
+        <h2>SELECT PLAYER COLOR</h2>
         <div style="display: flex; gap: 50px; justify-content: center; flex-wrap: wrap;">
-            <!-- Player 1 Palette -->
+            <!-- Player 1 Palette Only -->
             <div>
-                <h3>PLAYER 1</h3>
                 <div class="color-grid" id="p1-color-grid">
                     <div class="color-btn" style="background: #FF0000;" data-color="#FF0000" onclick="setPlayerColor(1, '#FF0000')"></div>
                     <div class="color-btn" style="background: #FF7F00;" data-color="#FF7F00" onclick="setPlayerColor(1, '#FF7F00')"></div>
@@ -132,35 +40,11 @@
                     <div class="color-btn" style="background: #FF007F;" data-color="#FF007F" onclick="setPlayerColor(1, '#FF007F')"></div>
                     <div class="color-btn" style="background: #FFFFFF;" data-color="#FFFFFF" onclick="setPlayerColor(1, '#FFFFFF')"></div>
                     <div class="color-btn" style="background: #C0C0C0;" data-color="#C0C0C0" onclick="setPlayerColor(1, '#C0C0C0')"></div>
-                    <div class="color-btn" style="background: #808080;" data-color="#808080" onclick="setPlayerColor(1, '#808080')"></div>
+                    <!-- The Gray (#808080) was removed to reserve it for the Robot. Added #00FA9A to keep the grid even -->
+                    <div class="color-btn" style="background: #00FA9A;" data-color="#00FA9A" onclick="setPlayerColor(1, '#00FA9A')"></div>
                     <div class="color-btn" style="background: #4B0082;" data-color="#4B0082" onclick="setPlayerColor(1, '#4B0082')"></div>
                 </div>
-                <p>P1 Color: <span id="p1-color-text" style="color: #00FFFF;">#00FFFF</span></p>
-            </div>
-
-            <!-- Player 2 Palette -->
-            <div>
-                <h3>PLAYER 2</h3>
-                <div class="color-grid" id="p2-color-grid">
-                    <div class="color-btn" style="background: #FF0000;" data-color="#FF0000" onclick="setPlayerColor(2, '#FF0000')"></div>
-                    <div class="color-btn" style="background: #FF7F00;" data-color="#FF7F00" onclick="setPlayerColor(2, '#FF7F00')"></div>
-                    <div class="color-btn" style="background: #FFFF00;" data-color="#FFFF00" onclick="setPlayerColor(2, '#FFFF00')"></div>
-                    <div class="color-btn" style="background: #7FFF00;" data-color="#7FFF00" onclick="setPlayerColor(2, '#7FFF00')"></div>
-                    <div class="color-btn" style="background: #00FF7F;" data-color="#00FF7F" onclick="setPlayerColor(2, '#00FF7F')"></div>
-                    
-                    <div class="color-btn" style="background: #00FFFF;" data-color="#00FFFF" onclick="setPlayerColor(2, '#00FFFF')"></div>
-                    <div class="color-btn" style="background: #007FFF;" data-color="#007FFF" onclick="setPlayerColor(2, '#007FFF')"></div>
-                    <div class="color-btn" style="background: #0000FF;" data-color="#0000FF" onclick="setPlayerColor(2, '#0000FF')"></div>
-                    <div class="color-btn" style="background: #7F00FF;" data-color="#7F00FF" onclick="setPlayerColor(2, '#7F00FF')"></div>
-                    <div class="color-btn" style="background: #FF00FF;" data-color="#FF00FF" onclick="setPlayerColor(2, '#FF00FF')"></div>
-                    
-                    <div class="color-btn" style="background: #FF007F;" data-color="#FF007F" onclick="setPlayerColor(2, '#FF007F')"></div>
-                    <div class="color-btn" style="background: #FFFFFF;" data-color="#FFFFFF" onclick="setPlayerColor(2, '#FFFFFF')"></div>
-                    <div class="color-btn" style="background: #C0C0C0;" data-color="#C0C0C0" onclick="setPlayerColor(2, '#C0C0C0')"></div>
-                    <div class="color-btn" style="background: #808080;" data-color="#808080" onclick="setPlayerColor(2, '#808080')"></div>
-                    <div class="color-btn" style="background: #4B0082;" data-color="#4B0082" onclick="setPlayerColor(2, '#4B0082')"></div>
-                </div>
-                <p>P2 Color: <span id="p2-color-text" style="color: #FF0000;">#FF0000</span></p>
+                <p>Color: <span id="p1-color-text" style="color: #00FFFF;">#00FFFF</span></p>
             </div>
         </div>
         <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
@@ -169,19 +53,9 @@
     <!-- Keybinds Screen -->
     <div id="keybinds-screen" class="screen">
         <h2>HOW TO PLAY</h2>
-        
-        <h3>1-PLAYER MODE</h3>
         <p><strong>Movement:</strong> Arrow Keys OR WASD</p>
         <p><strong>Dash (Teleport):</strong> Spacebar, /, or Right Shift</p>
-        
         <br>
-        
-        <h3>2-PLAYER MULTIPLAYER & MAGNETIC MODE</h3>
-        <p><strong>Player 1:</strong> Arrow Keys to move; Spacebar, /, or Right Shift to dash</p>
-        <p><strong>Player 2:</strong> WASD to move; Q, F, or Left Shift to dash</p>
-        
-        <br>
-        
         <p><strong>P</strong> - Pause Game</p>
         <br>
         <button class="main-btn" onclick="showScreen('menu-screen')">Back</button>
@@ -197,24 +71,15 @@
     <!-- Game Over Screen -->
     <div id="game-over-screen" class="screen">
         <h1 class="danger-text">SYSTEM FAILURE</h1>
-        <p class="stats-text" id="death-stats-mode">Full Fight, Difficulty</p>
+        <p class="stats-text" id="death-stats-mode">Robot Mode</p>
         <p>Time Survived: <span id="survival-time">0</span> seconds</p>
         <br>
         <button class="main-btn" onclick="showScreen('menu-screen')">MAIN MENU</button>
     </div>
 
-    <!-- Practice Failed Screen -->
-    <div id="practice-failed-screen" class="screen">
-        <h1 class="danger-text">PRACTICE FAILED</h1>
-        <p class="stats-text" id="practice-failed-mode">Phase X, Difficulty</p>
-        <button onclick="retryPractice()">TRY AGAIN</button>
-        <button class="main-btn" onclick="showScreen('menu-screen')">MAIN MENU</button>
-    </div>
-
     <!-- Victory Screen -->
     <div id="victory-screen" class="screen">
-        <h1 class="victory-text" id="victory-title">FULL FIGHT CLEARED</h1>
-        <p class="stats-text" id="victory-stats-mode">Mode, Difficulty</p>
+        <h1 class="victory-text" id="victory-title">ROBOT MODE CLEARED</h1>
         <p id="debug-hits-display" style="display:none; color: yellow;">Hits Taken: <span id="final-hits">0</span></p>
         <br>
         <button class="main-btn" onclick="showScreen('menu-screen')">MAIN MENU</button>
