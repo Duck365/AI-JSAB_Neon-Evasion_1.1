@@ -1,6 +1,6 @@
 /**
  * ==============================================================================
- * NEON EVASION - ENGINE & ATTACK SCRIPT
+ * NEON EVASION (ROBOT MODE) - ENGINE & ATTACK SCRIPT
  * ==============================================================================
  */
 
@@ -16,24 +16,14 @@ let warnings = [];
 
 // Player Colors
 let p1Color = '#00FFFF'; // Default Cyan
-let p2Color = '#FF0000'; // Default Red
-
-// Magnetic Mode State Variables
-let magneticTimeLimit = 0;
-let magneticTimer = 0;
-let magneticHits = 0;
-let isMagneticMode = false;
+// p2Color is removed; the robot is strictly #808080
 
 // Time tracking
 let startTime;
 let pauseStartTime = 0;
 let totalPausedTime = 0;
 
-let currentDifficulty = '';
-let gameMode = 'full'; 
-let challengeMode = 'none'; // 'none', 'invisible', 'bullet-colored'
-let selectedPracticePhase = '1';
-let currentHpSetting = 5;
+let currentDifficulty = 'Debug';
 
 // Input tracking
 const keys = {};
@@ -48,13 +38,7 @@ const p1 = {
 const p2 = {
     x: 0, y: 0, size: 20, speed: 6.5, health: 5,
     dashCooldown: 0, maxDashCooldown: 40, dashDistance: 180, isInvulnerable: 0,
-    hitsTaken: 0, active: false, color: p2Color
-};
-
-const PHASE_FRAMES = {
-    '1': 0, '1.1': 0, '1.2': 740, '1.3': 1560,
-    '2': 2700, '2.1': 2700, '2.2': 3600, '2.3': 4500,
-    '3': 5700, '3.1': 5700, '3.2': 6800, '3.3': 7900
+    hitsTaken: 0, active: true, color: '#808080' // Hardcoded Robot Color
 };
 
 function resize() {
@@ -70,36 +54,15 @@ function showScreen(screenId) {
     if (target) target.classList.add('active');
     canvas.style.display = 'none';
     document.getElementById('hud').style.display = 'none';
-    
-    if (screenId === 'customize-screen') {
-        updateColorButtons();
-    }
 }
 
 function setPlayerColor(playerNum, color) {
     if (playerNum === 1) {
-        if (color === p2Color) return; // Prevent picking P2's color
         p1Color = color;
+        p1.color = color;
         document.getElementById('p1-color-text').textContent = color;
         document.getElementById('p1-color-text').style.color = color;
-    } else {
-        if (color === p1Color) return; // Prevent picking P1's color
-        p2Color = color;
-        document.getElementById('p2-color-text').textContent = color;
-        document.getElementById('p2-color-text').style.color = color;
     }
-    updateColorButtons();
-}
-
-function updateColorButtons() {
-    document.querySelectorAll('#p1-color-grid .color-btn').forEach(btn => {
-        if (btn.dataset.color === p2Color) btn.classList.add('disabled');
-        else btn.classList.remove('disabled');
-    });
-    document.querySelectorAll('#p2-color-grid .color-btn').forEach(btn => {
-        if (btn.dataset.color === p1Color) btn.classList.add('disabled');
-        else btn.classList.remove('disabled');
-    });
 }
 
 function spawnProjectile(x, y, vx, vy, size, life = Infinity, isBouncy = false) {
@@ -108,48 +71,6 @@ function spawnProjectile(x, y, vx, vy, size, life = Infinity, isBouncy = false) 
 
 function spawnWarning(x, y, vx, vy, size, delayTimer) {
     warnings.push({ x, y, vx, vy, size, timer: delayTimer, maxTimer: delayTimer });
-}
-
-function setupMode(mode, phase = '1') {
-    isMagneticMode = false;
-    if (mode === 'invisible' || mode === 'bullet-colored') {
-        gameMode = 'full';
-        challengeMode = mode;
-    } else {
-        gameMode = mode;
-        challengeMode = 'none';
-        if (mode === 'practice') selectedPracticePhase = phase;
-    }
-}
-
-function startMagneticMode(frames) {
-    let magneticScreen = document.getElementById('magnetic-screen');
-    if (magneticScreen) magneticScreen.classList.remove('active');
-    
-    let specialScreen = document.getElementById('special-screen');
-    if (specialScreen) specialScreen.classList.remove('active');
-
-    let menuScreen = document.getElementById('menu-screen');
-    if (menuScreen) menuScreen.classList.remove('active');
-
-    gameMode = 'multiplayer';
-    challengeMode = 'none';
-    isMagneticMode = true;
-    magneticTimeLimit = frames;
-    magneticTimer = frames;
-    magneticHits = 0; 
-
-    p1.active = true;
-    p2.active = true;
-
-    startGame('Debug', 'Debug'); 
-}
-
-function goBackFromDifficulty() {
-    if (gameMode === 'practice') showScreen('practice-phase-screen');
-    else if (isMagneticMode) showScreen('magnetic-screen');
-    else if (gameMode === 'multiplayer' || challengeMode !== 'none') showScreen('special-screen');
-    else showScreen('menu-screen');
 }
 
 function pauseGame() {
@@ -176,23 +97,6 @@ function quitToMenu() {
     showScreen('menu-screen');
 }
 
-function toggleCustomHp() {
-    let container = document.getElementById('custom-hp-container');
-    container.style.display = container.style.display === 'none' ? 'block' : 'none';
-}
-
-function handleCustomHpInput() {
-    let input = document.getElementById('custom-hp-input');
-    input.value = input.value.replace(/\s/g, ''); 
-    let val = parseInt(input.value);
-    document.getElementById('custom-hp-btn').disabled = isNaN(val) || val <= 0;
-}
-
-function startCustomGame() {
-    let hp = parseInt(document.getElementById('custom-hp-input').value);
-    startGame(hp, 'Custom HP');
-}
-
 window.addEventListener('keydown', (e) => {
     keys[e.key] = true;
     keys[e.code] = true; 
@@ -204,12 +108,13 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    // Only Player 1 Dash
     if ((e.code === 'Space' || e.code === 'Slash' || e.code === 'ShiftRight' || e.key === '/') && gameActive && !isPaused && p1.dashCooldown <= 0 && p1.active) {
         let dx = 0; let dy = 0;
-        if (keys.ArrowUp || (gameMode !== 'multiplayer' && (keys.w || keys.W))) dy -= 1;
-        if (keys.ArrowDown || (gameMode !== 'multiplayer' && (keys.s || keys.S))) dy += 1;
-        if (keys.ArrowLeft || (gameMode !== 'multiplayer' && (keys.a || keys.A))) dx -= 1;
-        if (keys.ArrowRight || (gameMode !== 'multiplayer' && (keys.d || keys.D))) dx += 1;
+        if (keys.ArrowUp || keys.w || keys.W) dy -= 1;
+        if (keys.ArrowDown || keys.s || keys.S) dy += 1;
+        if (keys.ArrowLeft || keys.a || keys.A) dx -= 1;
+        if (keys.ArrowRight || keys.d || keys.D) dx += 1;
         
         if (dx === 0 && dy === 0) dx = 1;
         let length = Math.sqrt(dx*dx + dy*dy);
@@ -221,24 +126,6 @@ window.addEventListener('keydown', (e) => {
         p1.dashCooldown = p1.maxDashCooldown;
         p1.isInvulnerable = Math.max(p1.isInvulnerable, 25); 
     }
-
-    if ((e.code === 'ShiftLeft' || e.code === 'KeyQ' || e.code === 'KeyF' || e.key === 'q' || e.key === 'Q' || e.key === 'f' || e.key === 'F') && gameActive && !isPaused && p2.dashCooldown <= 0 && p2.active) {
-        let dx = 0; let dy = 0;
-        if (keys.w || keys.W) dy -= 1;
-        if (keys.s || keys.S) dy += 1;
-        if (keys.a || keys.A) dx -= 1;
-        if (keys.d || keys.D) dx += 1;
-        
-        if (dx === 0 && dy === 0) dx = 1;
-        let length = Math.sqrt(dx*dx + dy*dy);
-        p2.x += (dx / length) * p2.dashDistance;
-        p2.y += (dy / length) * p2.dashDistance;
-        
-        p2.x = Math.max(p2.size, Math.min(canvas.width - p2.size, p2.x));
-        p2.y = Math.max(p2.size, Math.min(canvas.height - p2.size, p2.y));
-        p2.dashCooldown = p2.maxDashCooldown;
-        p2.isInvulnerable = Math.max(p2.isInvulnerable, 25); 
-    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -246,18 +133,60 @@ window.addEventListener('keyup', (e) => {
     keys[e.code] = false;
 });
 
+// ==========================================
+// THE ROBOT BRAIN
+// ==========================================
+function updateRobot(t) {
+    if (!p2.active) return;
+    
+    let targetX = p2.x;
+    let targetY = p2.y;
+
+    // Phase 1.1 (0 - 740)
+    if (t >= 0 && t < 740) {
+        // Simple figure-8 to test the robot's movement
+        targetX = canvas.width / 2 + Math.cos(t * 0.02) * 200;
+        targetY = canvas.height / 2 + Math.sin(t * 0.04) * 150;
+    }
+    // Phase 1.2 (740 - 1560)
+    else if (t >= 740 && t < 1560) {
+        // Dodge the spicy sweeps by sticking to the top or bottom
+        targetX = canvas.width / 2;
+        targetY = canvas.height / 4; 
+    }
+
+    // Move Robot towards target
+    let dx = targetX - p2.x;
+    let dy = targetY - p2.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if (dist > p2.speed) {
+        p2.x += (dx / dist) * p2.speed;
+        p2.y += (dy / dist) * p2.speed;
+    } else {
+        p2.x = targetX;
+        p2.y = targetY;
+    }
+
+    // Decrease robot cooldowns
+    if (p2.dashCooldown > 0) p2.dashCooldown--;
+    if (p2.isInvulnerable > 0) p2.isInvulnerable--;
+    
+    // Safety Boundary Check
+    p2.x = Math.max(p2.size/2, Math.min(canvas.width - p2.size/2, p2.x));
+    p2.y = Math.max(p2.size/2, Math.min(canvas.height - p2.size/2, p2.y));
+}
+
+// ==========================================
+// PHASES
+// ==========================================
 function executePhase1(t) {
-    // PHASE 1.1: Original 1.1 & Original 1.2 (Frames 0 to 740)
     if (t === 120) {
         spawnWarning(0, 0, "diag_laser_1", 0, 0, 60); 
         spawnWarning(canvas.width, 0, "diag_laser_2", 0, 0, 60);
         spawnWarning(canvas.width/2, canvas.height/2, "spinner_warn", 0, 80, 60);
     }
-
-    if (t === 180) {
-        spawnProjectile(100, 100, 6, 6, 50, 800, true); 
-    }
-
+    if (t === 180) spawnProjectile(100, 100, 6, 6, 50, 800, true); 
     if (t > 180 && t < 740 && t % 4 === 0) {
         let angle = t * 0.15;
         let cx = canvas.width / 2; let cy = canvas.height / 2;
@@ -266,32 +195,17 @@ function executePhase1(t) {
         spawnProjectile(cx, cy, Math.cos(angle + Math.PI)*7, Math.sin(angle + Math.PI)*7, 12);
         spawnProjectile(cx, cy, Math.cos(angle + Math.PI*1.5)*7, Math.sin(angle + Math.PI*1.5)*7, 12);
     }
-
-    // --- TRANSITION CLEAR ---
-    if (t === 740) {
-        // Wipes the board clean so Phase 1.1 elements don't overlap with Phase 1.2
-        projectiles = []; 
-        warnings = [];
-    }
-
-    // PHASE 1.2: NEW "Spicy" Pattern (Frames 740 to 1560)
+    if (t === 740) { projectiles = []; warnings = []; }
     if (t > 740 && t < 1560) {
-        // Spicy Element 1: Sine-wave sweepers crossing the screen rapidly from both sides
         if (t % 8 === 0) {
             let sweepY = (Math.sin(t * 0.05) * (canvas.height / 2.5)) + (canvas.height / 2);
-            spawnProjectile(0, sweepY, 9, 0, 12); // Left to right
-            spawnProjectile(canvas.width, canvas.height - sweepY, -9, 0, 12); // Right to left
+            spawnProjectile(0, sweepY, 9, 0, 12); 
+            spawnProjectile(canvas.width, canvas.height - sweepY, -9, 0, 12); 
         }
-        
-        // Spicy Element 2: Tracker Rings closing in on active players
         if (t % 100 === 0) {
-            let activePlayers = [p1];
-            if (typeof gameMode !== 'undefined' && gameMode === 'multiplayer' && p2.active) {
-                activePlayers.push(p2);
-            }
-            
+            // Robot mode: Boss only targets p2
+            let activePlayers = [p2];
             activePlayers.forEach(player => {
-                // Spawns a wide ring of bullets 400px away that slowly converge on the player's current position
                 for (let i = 0; i < Math.PI * 2; i += Math.PI / 8) {
                     let startX = player.x + Math.cos(i) * 400;
                     let startY = player.y + Math.sin(i) * 400;
@@ -301,8 +215,6 @@ function executePhase1(t) {
             });
         }
     }
-
-    // PHASE 1.3: Original Logic Retained (Frames 1560 to 2360)
     if (t > 1560 && t < 2360) {
         if (t % 80 === 0) {
             let dir = Math.random() > 0.5 ? 1 : -1;
@@ -364,66 +276,40 @@ function executePhase3(t) {
 
     if (t > 7960 && t < 9000) {
         if (t % 20 === 0) {
-            spawnWarning(p1.x, p1.y, "track", "p1", 0, 30);
-            if (gameMode === 'multiplayer' && p2.active) spawnWarning(p2.x, p2.y, "track", "p2", 0, 30);
-            
+            spawnWarning(p2.x, p2.y, "track", "p2", 0, 30); // Targets Robot
             if (t % 40 === 0) spawnProjectile(Math.random()*canvas.width, -20, 0, 10, 15);
         }
         if (t % 60 === 0) {
             let startX1 = Math.random() > 0.5 ? -20 : canvas.width + 20;
-            let startX2 = Math.random() > 0.5 ? -20 : canvas.width + 20;
-            spawnWarning(startX1, Math.random() * canvas.height, "sniper_line", p1.x, p1.y, 45);
-            if (gameMode === 'multiplayer' && p2.active) spawnWarning(startX2, Math.random() * canvas.height, "sniper_line", p2.x, p2.y, 45);
+            spawnWarning(startX1, Math.random() * canvas.height, "sniper_line", p2.x, p2.y, 45); // Targets Robot
         }
     }
 }
 
 function executeAttacks() {
     let t = frameCount;
-    let majorPhase = selectedPracticePhase.charAt(0);
 
-    if (gameMode === 'full' || gameMode === 'multiplayer' || (gameMode === 'practice' && majorPhase === '1')) executePhase1(t);
+    executePhase1(t);
 
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        if (t === 2400) { projectiles = []; warnings = []; }
-        if (t === 2460 || t === 2470 || t === 2480) {
-            for(let i = 0; i < canvas.height; i += 20) {
-                spawnProjectile(-50, i, 8, 0, 20);
-                spawnProjectile(canvas.width + 50, i, -8, 0, 20);
-            }
+    if (t === 2400) { projectiles = []; warnings = []; }
+    if (t === 2460 || t === 2470 || t === 2480) {
+        for(let i = 0; i < canvas.height; i += 20) {
+            spawnProjectile(-50, i, 8, 0, 20);
+            spawnProjectile(canvas.width + 50, i, -8, 0, 20);
         }
     }
 
-    if (gameMode === 'full' || gameMode === 'multiplayer' || (gameMode === 'practice' && majorPhase === '2')) executePhase2(t);
+    executePhase2(t);
 
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        if (t === 5400) { projectiles = []; warnings = []; }
-        if (t === 5460) {
-            for(let x = 100; x < canvas.width; x += 150) spawnWarning(x, 0, "grid_laser_v", 0, 0, 90); 
-            for(let y = 100; y < canvas.height; y += 150) spawnWarning(0, y, "grid_laser_h", 0, 0, 90); 
-        }
+    if (t === 5400) { projectiles = []; warnings = []; }
+    if (t === 5460) {
+        for(let x = 100; x < canvas.width; x += 150) spawnWarning(x, 0, "grid_laser_v", 0, 0, 90); 
+        for(let y = 100; y < canvas.height; y += 150) spawnWarning(0, y, "grid_laser_h", 0, 0, 90); 
     }
 
-    if (gameMode === 'full' || gameMode === 'multiplayer' || (gameMode === 'practice' && majorPhase === '3')) executePhase3(t);
+    executePhase3(t);
 
-    if (gameMode === 'practice') {
-        if (selectedPracticePhase === '1.1' && t === 800) gameWon();
-        if (selectedPracticePhase === '1.2' && t === 1600) gameWon();
-        if (selectedPracticePhase === '1.3' && t === 2400) gameWon();
-        if (selectedPracticePhase === '1' && t === 2400) gameWon();
-
-        if (selectedPracticePhase === '2.1' && t === 3600) gameWon();
-        if (selectedPracticePhase === '2.2' && t === 4500) gameWon();
-        if (selectedPracticePhase === '2.3' && t === 5400) gameWon();
-        if (selectedPracticePhase === '2' && t === 5400) gameWon();
-
-        if (selectedPracticePhase === '3.1' && t === 6800) gameWon();
-        if (selectedPracticePhase === '3.2' && t === 7900) gameWon();
-        if (selectedPracticePhase === '3.3' && t === 9000) gameWon();
-        if (selectedPracticePhase === '3' && t === 9000) gameWon();
-    }
-
-    if ((gameMode === 'full' || gameMode === 'multiplayer') && t === 9000) gameWon();
+    if (t === 9000) gameWon();
 }
 
 function updatePlayer(player, keysArr) {
@@ -453,33 +339,15 @@ function update() {
     if (!gameActive || isPaused) return;
 
     let p1Keys = {
-        up: keys.ArrowUp || (gameMode !== 'multiplayer' && (keys.w || keys.W)),
-        down: keys.ArrowDown || (gameMode !== 'multiplayer' && (keys.s || keys.S)),
-        left: keys.ArrowLeft || (gameMode !== 'multiplayer' && (keys.a || keys.A)),
-        right: keys.ArrowRight || (gameMode !== 'multiplayer' && (keys.d || keys.D))
+        up: keys.ArrowUp || keys.w || keys.W,
+        down: keys.ArrowDown || keys.s || keys.S,
+        left: keys.ArrowLeft || keys.a || keys.A,
+        right: keys.ArrowRight || keys.d || keys.D
     };
     updatePlayer(p1, p1Keys);
-
-    if (gameMode === 'multiplayer') {
-        let p2Keys = { up: keys.w || keys.W, down: keys.s || keys.S, left: keys.a || keys.A, right: keys.d || keys.D };
-        updatePlayer(p2, p2Keys);
-    }
-
-    if (isMagneticMode && p1.active && p2.active) {
-        let dx = p1.x - p2.x;
-        let dy = p1.y - p2.y;
-        let dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < (p1.size / 2 + p2.size / 2)) {
-            magneticTimer = magneticTimeLimit; 
-        } else {
-            magneticTimer--;
-            if (magneticTimer <= 0) {
-                magneticHits++; 
-                magneticTimer = magneticTimeLimit; 
-            }
-        }
-    }
+    
+    // Call the robot brain
+    updateRobot(frameCount);
 
     for (let i = warnings.length - 1; i >= 0; i--) {
         let w = warnings[i];
@@ -489,7 +357,7 @@ function update() {
             if (w.vx === "ring") {
                 for(let j = 0; j < Math.PI * 2; j += Math.PI / 8) spawnProjectile(w.x, w.y, Math.cos(j)*9, Math.sin(j)*9, 14);
             } else if (w.vx === "track") {
-                let target = w.vy === "p2" ? p2 : p1;
+                let target = p2; // Hardcoded to target the robot
                 let angle = Math.atan2(target.y - w.y, target.x - w.x);
                 spawnProjectile(w.x, w.y, Math.cos(angle)*12, Math.sin(angle)*12, 16);
             } else if (w.vy === "split_wall") {
@@ -552,21 +420,13 @@ function update() {
                     Math.abs(playerObj.y - p.y) < (playerObj.size/2 + p.size/2 - 3)) {
                     
                     playerObj.hitsTaken++;
-                    if (currentDifficulty !== 'Debug') {
-                        playerObj.health--;
-                        if (playerObj.health <= 0) {
-                            playerObj.active = false;
-                            if (!p1.active && !p2.active) gameOver();
-                        } else playerObj.isInvulnerable = 60; 
-                    } else {
-                        playerObj.isInvulnerable = 60;
-                    }
+                    playerObj.isInvulnerable = 60;
                 }
             }
         };
 
         checkHit(p1);
-        if (gameMode === 'multiplayer') checkHit(p2);
+        checkHit(p2);
     }
 
     executeAttacks();
@@ -574,12 +434,7 @@ function update() {
     
     let displayTime = Math.floor(frameCount / 60);
     document.getElementById('timer-display').innerText = displayTime;
-    
-    if (currentDifficulty === 'Debug') {
-        document.getElementById('hp-display').innerText = `DEBUG P1 (Hits: ${p1.hitsTaken})` + (gameMode === 'multiplayer' ? ` | P2 (Hits: ${p2.hitsTaken})` : '');
-    } else {
-        document.getElementById('hp-display').innerText = `P1 HP: ${p1.health > 0 ? p1.health : 'DEAD'}` + (gameMode === 'multiplayer' ? ` | P2 HP: ${p2.health > 0 ? p2.health : 'DEAD'}` : '');
-    }
+    document.getElementById('hp-display').innerText = `DEBUG P1 (Hits: ${p1.hitsTaken}) | ROBOT (Hits: ${p2.hitsTaken})`;
     
     draw();
     animationId = requestAnimationFrame(update);
@@ -607,8 +462,7 @@ function draw() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    let isPhase1_2 = (gameMode === 'full' || gameMode === 'multiplayer') && frameCount >= 800 && frameCount <= 1660 || 
-                     (gameMode === 'practice' && ['1', '1.2'].includes(selectedPracticePhase.charAt(0)) && frameCount >= 800 && frameCount <= 1660);
+    let isPhase1_2 = frameCount >= 800 && frameCount <= 1660;
 
     if (isPhase1_2) {
         let cx = canvas.width / 2; let cy = canvas.height / 2;
@@ -628,7 +482,7 @@ function draw() {
     }
 
     drawPlayer(p1);
-    if (gameMode === 'multiplayer') drawPlayer(p2);
+    drawPlayer(p2);
 
     ctx.fillStyle = '#00FF00';
     ctx.shadowBlur = 12; ctx.shadowColor = '#00FF00';
@@ -680,7 +534,7 @@ function draw() {
             if (w.timer >= 15 || frameCount % 4 >= 2) { ctx.fillStyle = 'white'; ctx.font = 'bold 2rem Courier New'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', w.x, w.y); }
         }
         else if (w.vx === "track") {
-            let target = w.vy === "p2" ? p2 : p1;
+            let target = p2; 
             let angle = Math.atan2(target.y - w.y, target.x - w.x);
             let triSize = 30;
             ctx.save(); ctx.translate(w.x, w.y); ctx.rotate(angle);
@@ -704,115 +558,47 @@ function draw() {
         }
     }
 
-    if (isMagneticMode) {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = '16px Courier New';
-        ctx.textAlign = 'center';
-        
-        ctx.fillText(`Magnetic hits taken: ${magneticHits}`, canvas.width / 2, 30);
-        ctx.fillText(`Time to touch: ${(magneticTimer / 60).toFixed(1)}s`, canvas.width / 2, 50);
-    }
-
     ctx.textAlign = 'center';
-    let startFrame = gameMode === 'practice' ? PHASE_FRAMES[selectedPracticePhase] : 0;
-    if (p1.isInvulnerable > 0 && frameCount < startFrame + 120) {
+    if (p1.isInvulnerable > 0 && frameCount < 120) {
         ctx.fillStyle = `rgba(255, 255, 255, ${p1.isInvulnerable / 120})`; ctx.font = '3rem Courier New';
-        ctx.fillText(gameMode === 'practice' ? `PHASE ${selectedPracticePhase} PRACTICE` : (isMagneticMode ? 'MAGNETIC MODE' : 'GET READY!'), canvas.width / 2, canvas.height / 2 - 100);
+        ctx.fillText('GET READY!', canvas.width / 2, canvas.height / 2 - 100);
     }
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        if (frameCount >= 2400 && frameCount < 2520) {
-            ctx.fillStyle = `rgba(255, 50, 50, ${(2520 - frameCount)/100})`; ctx.font = 'bold 5rem Courier New';
-            ctx.fillText('THE CRUSH', canvas.width / 2, canvas.height / 2); ctx.font = '2rem Courier New'; ctx.fillText('DASH THROUGH!', canvas.width / 2, canvas.height / 2 + 60);
-        }
-        if (frameCount >= 5400 && frameCount < 5520) {
-            ctx.fillStyle = `rgba(255, 0, 0, ${(5520 - frameCount)/100})`; ctx.font = 'bold 5rem Courier New';
-            ctx.fillText('THE GRID', canvas.width / 2, canvas.height / 2); ctx.font = '2rem Courier New'; ctx.fillText('FIND THE SAFE ZONE', canvas.width / 2, canvas.height / 2 + 60);
-        }
+    if (frameCount >= 2400 && frameCount < 2520) {
+        ctx.fillStyle = `rgba(255, 50, 50, ${(2520 - frameCount)/100})`; ctx.font = 'bold 5rem Courier New';
+        ctx.fillText('THE CRUSH', canvas.width / 2, canvas.height / 2); ctx.font = '2rem Courier New'; ctx.fillText('DASH THROUGH!', canvas.width / 2, canvas.height / 2 + 60);
+    }
+    if (frameCount >= 5400 && frameCount < 5520) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${(5520 - frameCount)/100})`; ctx.font = 'bold 5rem Courier New';
+        ctx.fillText('THE GRID', canvas.width / 2, canvas.height / 2); ctx.font = '2rem Courier New'; ctx.fillText('FIND THE SAFE ZONE', canvas.width / 2, canvas.height / 2 + 60);
     }
 }
 
-function startGame(hp, difficultyName) {
-    currentDifficulty = difficultyName; currentHpSetting = hp;
+function startGame() {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('debug-hits-display').style.display = 'none';
     resize(); canvas.style.display = 'block'; document.getElementById('hud').style.display = 'flex';
     
-    if (challengeMode === 'invisible') p1.color = '#000000';
-    else if (challengeMode === 'bullet-colored') p1.color = '#00FF00';
-    else p1.color = p1Color;
+    p1.color = p1Color;
 
-    p2.color = p2Color; 
-
-    p1.x = canvas.width / 2 - (gameMode === 'multiplayer' ? 50 : 0); p1.y = canvas.height / 2; 
+    p1.x = canvas.width / 2 - 50; p1.y = canvas.height / 2; 
     p1.hitsTaken = 0; p1.active = true; p1.isInvulnerable = 120;
     
-    if (gameMode === 'multiplayer') {
-        p2.x = canvas.width / 2 + 50; p2.y = canvas.height / 2;
-        p2.hitsTaken = 0; p2.active = true; p2.isInvulnerable = 120;
-    } else {
-        p2.active = false;
-    }
-
-    if (currentDifficulty !== 'Debug') {
-        p1.health = hp; 
-        if (gameMode === 'multiplayer') p2.health = hp;
-    }
+    p2.x = canvas.width / 2 + 50; p2.y = canvas.height / 2;
+    p2.hitsTaken = 0; p2.active = true; p2.isInvulnerable = 120;
     
     projectiles = []; warnings = []; gameActive = true; isPaused = false;
     startTime = Date.now(); totalPausedTime = 0;
-
-    let maxSeconds;
-    if (gameMode === 'full' || gameMode === 'multiplayer') {
-        frameCount = 0; 
-        maxSeconds = 9000 / 60; // Exact max time based on engine logic
-    } else {
-        frameCount = PHASE_FRAMES[selectedPracticePhase]; 
-        let majorPhase = selectedPracticePhase.charAt(0);
-        if (majorPhase === '1') maxSeconds = 2400 / 60;
-        else if (majorPhase === '2') maxSeconds = 5400 / 60;
-        else if (majorPhase === '3') maxSeconds = 9000 / 60;
-    }
-    document.getElementById('timer-max').innerText = '/ ' + maxSeconds;
+    frameCount = 0; 
+    
+    document.getElementById('timer-max').innerText = '/ 150';
     
     update();
 }
 
-function retryPractice() { startGame(currentHpSetting, currentDifficulty); }
-
-function gameOver() {
-    gameActive = false; cancelAnimationFrame(animationId);
-    let challengeText = challengeMode !== 'none' ? ` Challenge - ${challengeMode.charAt(0).toUpperCase() + challengeMode.slice(1)}` : '';
-
-    if (gameMode === 'practice') {
-        document.getElementById('practice-failed-mode').innerText = `Phase ${selectedPracticePhase}, ${currentDifficulty}`;
-        showScreen('practice-failed-screen');
-    } else {
-        let timeSurvived = Math.floor(frameCount / 60);
-        let modeLabel = isMagneticMode ? 'Magnetic Mode' : (gameMode === 'multiplayer' ? 'Multiplayer' : 'Full Fight');
-        document.getElementById('death-stats-mode').innerText = `${modeLabel}${challengeText}, ${currentDifficulty}`;
-        document.getElementById('survival-time').innerText = timeSurvived; showScreen('game-over-screen');
-    }
-}
-
 function gameWon() {
     gameActive = false; cancelAnimationFrame(animationId);
-    let challengeText = challengeMode !== 'none' ? ` Challenge - ${challengeMode.charAt(0).toUpperCase() + challengeMode.slice(1)}` : '';
-
-    if (gameMode === 'practice') {
-        document.getElementById('victory-title').innerText = "PHASE CLEARED";
-        document.getElementById('victory-stats-mode').innerText = `Phase ${selectedPracticePhase} Practice${challengeText}, ${currentDifficulty}`;
-    } else {
-        document.getElementById('victory-title').innerText = "FULL FIGHT CLEARED";
-        let modeLabel = isMagneticMode ? 'Magnetic Mode' : (gameMode === 'multiplayer' ? 'Multiplayer' : 'Full Fight');
-        document.getElementById('victory-stats-mode').innerText = `${modeLabel}${challengeText}, ${currentDifficulty}`;
-    }
-    if (currentDifficulty === 'Debug') {
-        document.getElementById('debug-hits-display').style.display = 'block';
-        if (gameMode === 'multiplayer') {
-            document.getElementById('final-hits').innerText = `P1: ${p1.hitsTaken} | P2: ${p2.hitsTaken}${isMagneticMode ? ` | Magnetic Hits: ${magneticHits}` : ''}`;
-        } else {
-            document.getElementById('final-hits').innerText = `${p1.hitsTaken}`;
-        }
-    }
+    document.getElementById('victory-title').innerText = "ROBOT MODE CLEARED";
+    document.getElementById('debug-hits-display').style.display = 'block';
+    document.getElementById('final-hits').innerText = `P1: ${p1.hitsTaken} | ROBOT: ${p2.hitsTaken}`;
     showScreen('victory-screen');
 }
