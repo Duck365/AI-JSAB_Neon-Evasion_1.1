@@ -247,28 +247,30 @@ window.addEventListener('keyup', (e) => {
 });
 
 function executePhase1(t) {
-    if (t === 120) {
-        spawnWarning(0, 0, "diag_laser_1", 0, 0, 60); 
-        spawnWarning(canvas.width, 0, "diag_laser_2", 0, 0, 60);
+    // PHASE 1.1 (Frames 0 to 740)
+    if (t < 740 && t % 24 === 0) {
+        let angle = Math.atan2(p1.y - 0, p1.x - canvas.width / 2);
+        spawnProjectile(canvas.width / 2, 0, Math.cos(angle) * 5, Math.sin(angle) * 5, 15);
+        
+        for (let i = 0; i < 4; i++) {
+            spawnProjectile(Math.random() * canvas.width, 0, 0, 3, 15);
+        }
+    }
+    
+    // PHASE 1.2 (Frames 740 to 1560)
+    if (t >= 740 && t < 1560 && t % 36 === 0) {
+        for (let x = 0; x < canvas.width; x += 35) {
+            if (Math.abs(x - p1.x) > 45) {
+                spawnProjectile(x, 0, 0, 6, 15);
+            }
+        }
+        
+        let sideY = p1.y + (Math.random() > 0.5 ? 40 : -40);
+        spawnProjectile(0, sideY, 8, 0, 15);
+        spawnProjectile(canvas.width, sideY + 60, -8, 0, 15);
     }
 
-    if (t === 740) {
-        spawnWarning(canvas.width/2, canvas.height/2, "spinner_warn", 0, 80, 60);
-    }
-
-    if (t === 800) {
-        spawnProjectile(100, 100, 6, 6, 50, 800, true); 
-    }
-
-    if (t > 800 && t < 1600 && t % 4 === 0) {
-        let angle = t * 0.15;
-        let cx = canvas.width / 2; let cy = canvas.height / 2;
-        spawnProjectile(cx, cy, Math.cos(angle)*7, Math.sin(angle)*7, 12);
-        spawnProjectile(cx, cy, Math.cos(angle + Math.PI/2)*7, Math.sin(angle + Math.PI/2)*7, 12);
-        spawnProjectile(cx, cy, Math.cos(angle + Math.PI)*7, Math.sin(angle + Math.PI)*7, 12);
-        spawnProjectile(cx, cy, Math.cos(angle + Math.PI*1.5)*7, Math.sin(angle + Math.PI*1.5)*7, 12);
-    }
-
+    // PHASE 1.3 (Original Logic Retained)
     if (t > 1560 && t < 2360) {
         if (t % 80 === 0) {
             let dir = Math.random() > 0.5 ? 1 : -1;
