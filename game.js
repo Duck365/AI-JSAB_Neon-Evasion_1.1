@@ -155,7 +155,7 @@ function updateRobot(t) {
     }
 
     // Active Danger Evasion (Calculated Escape)
-    if (p2.aiState === 'random') {
+    if (p2.aiState === 'random' || p2.aiState === 'bottom_dash') {
         for (let w of warnings) {
             if ((w.vx === "firecracker" || w.vx === "ring") && w.timer < 35) {
                 let dx = p2.x - w.x;
@@ -177,20 +177,22 @@ function updateRobot(t) {
     // Phase 1.1: Hover in the top-middle safe zone (0 - 740)
     if (t >= 0 && t < 740) {
         p2.aiState = 'path';
-        // Place the robot in the top-middle to avoid the diagonal lines completely
         p2.aiTargetX = canvas.width / 2;
         p2.aiTargetY = canvas.height * 0.15;
     }
-    // Phase 1.2: Path & Max Dash Speed (740 - 1560)
+    // Phase 1.2: Very Bottom Left/Right Dashing (740 - 1560)
     else if (t >= 740 && t < 1560) {
         p2.aiState = 'path';
+        p2.aiTargetY = canvas.height - 40; // Very bottom
         p2.aiTargetX = canvas.width / 2;
-        p2.aiTargetY = canvas.height / 4; 
         
-        // Dashing as fast as mathematically possible (immediately off cooldown)
         if (p2.dashCooldown <= 0) {
-            p2.x = canvas.width / 2 + (Math.random() > 0.5 ? 250 : -250);
-            p2.y = canvas.height / 2 + (Math.random() > 0.5 ? 200 : -200);
+            // Dash Right, then Dash Left depending on screen position
+            if (p2.x <= canvas.width / 2) {
+                p2.x += 400; // Dash Right
+            } else {
+                p2.x -= 400; // Dash Left
+            }
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
@@ -213,7 +215,7 @@ function updateRobot(t) {
             p2.x = canvas.width / 2; p2.y = canvas.height / 2; 
             p2.aiTargetX = p2.x; p2.aiTargetY = p2.y; 
         }
-        // Delayed to mimic human reaction time: Left... Wait... Right
+        // Wait... half-wait... dash left (2475)... wait... dash right (2515)
         if (t === 2475 && p2.dashCooldown <= 0) { 
             p2.x -= 400; p2.dashCooldown = p2.maxDashCooldown; // Dash left
         } 
@@ -221,7 +223,7 @@ function updateRobot(t) {
             p2.x += 800; p2.dashCooldown = p2.maxDashCooldown; // Dash right
         }
     }
-    // Phase 2.1: Random Bottom - MORE TELEPORTING (2700 - 3600)
+    // Phase 2.1: Random Bottom (2700 - 3600)
     else if (t >= 2700 && t < 3600) {
         p2.aiState = 'random';
         if (t % 60 === 0) {
@@ -233,15 +235,20 @@ function updateRobot(t) {
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phases 2.2 & 2.3: Random Middle (3600 - 5400)
+    // Phases 2.2 & 2.3: Bottom Dash & Evasion (3600 - 5400)
     else if (t >= 3600 && t < 5400) {
-        p2.aiState = 'random';
-        if (t % 50 === 0) {
-            p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
-            p2.aiTargetY = canvas.height/2 + (Math.random() * 300 - 150);
+        p2.aiState = 'bottom_dash';
+        p2.aiTargetY = canvas.height - 40; // Lock pathing to the very bottom
+        
+        if (t % 30 === 0) {
+            // Pick a new random X target along the bottom
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 600 - 300);
         }
-        if (t % 150 === 0 && p2.dashCooldown <= 0) {
-            p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+        
+        // 90-95% dashing behavior along the bottom
+        if (p2.dashCooldown <= 0 && Math.random() < 0.95) {
+            p2.x = p2.aiTargetX;
+            // Evasion logic above will alter Y if needed, but pathing pulls it back down
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
