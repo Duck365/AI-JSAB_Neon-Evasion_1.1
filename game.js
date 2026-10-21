@@ -145,20 +145,37 @@ window.addEventListener('keyup', (e) => {
 function updateRobot(t) {
     if (!p2.active) return;
 
-    // Safety Boundary Check - Teleport to middle if too close to edge during random phases
-    let margin = 30;
-    if (p2.aiState === 'random' && (p2.x < margin || p2.x > canvas.width - margin || p2.y < margin || p2.y > canvas.height - margin)) {
+    // Safety Boundary Check
+    let margin = 40;
+    if (p2.aiState.startsWith('random') && (p2.x < margin || p2.x > canvas.width - margin || p2.y < margin || p2.y > canvas.height - margin)) {
         p2.x = canvas.width / 2;
         p2.y = canvas.height / 2;
         p2.aiTargetX = p2.x;
         p2.aiTargetY = p2.y;
     }
 
-    // Phase 1.1: Path (0 - 740)
+    // Active Danger Evasion (Phases 2.2 & 2.3)
+    if (p2.aiState === 'random') {
+        for (let w of warnings) {
+            if ((w.vx === "firecracker" || w.vx === "ring") && w.timer < 35) {
+                let dist = Math.sqrt(Math.pow(p2.x - w.x, 2) + Math.pow(p2.y - w.y, 2));
+                if (dist < (w.size || 40) + 30 && p2.dashCooldown <= 0) {
+                    // Dash away randomly
+                    p2.x = p2.x + (Math.random() > 0.5 ? 250 : -250);
+                    p2.y = p2.y + (Math.random() > 0.5 ? 250 : -250);
+                    p2.dashCooldown = p2.maxDashCooldown;
+                    p2.aiTargetX = p2.x; 
+                    p2.aiTargetY = p2.y;
+                }
+            }
+        }
+    }
+
+    // Phase 1.1: New Sweeping Path (0 - 740)
     if (t >= 0 && t < 740) {
         p2.aiState = 'path';
-        p2.aiTargetX = canvas.width / 2 + Math.cos(t * 0.02) * 200;
-        p2.aiTargetY = canvas.height / 2 + Math.sin(t * 0.04) * 150;
+        p2.aiTargetX = canvas.width / 2 + Math.sin(t * 0.03) * 300;
+        p2.aiTargetY = canvas.height / 3 + Math.cos(t * 0.05) * 150;
     }
     // Phase 1.2: Path & Dodge (740 - 1560)
     else if (t >= 740 && t < 1560) {
@@ -166,32 +183,37 @@ function updateRobot(t) {
         p2.aiTargetX = canvas.width / 2;
         p2.aiTargetY = canvas.height / 4; 
         
-        // Teleport escape when homing bullets close in
         if (t % 100 === 80 && p2.dashCooldown <= 0) {
-            p2.x = canvas.width / 2 + (Math.random() > 0.5 ? 200 : -200);
+            p2.x = canvas.width / 2 + (Math.random() > 0.5 ? 250 : -250);
             p2.y = canvas.height / 2 + (Math.random() > 0.5 ? 200 : -200);
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phase 1.3: Random Middle (1560 - 2400)
+    // Phase 1.3: Random Middle - More Teleporting (1560 - 2400)
     else if (t >= 1560 && t < 2400) {
         p2.aiState = 'random';
-        if (t % 60 === 0) { // Pick new random spot near middle
-            p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
-            p2.aiTargetY = canvas.height/2 + (Math.random() * 300 - 150);
+        if (t % 50 === 0) { 
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
+            p2.aiTargetY = canvas.height/2 + (Math.random() * 400 - 200);
         }
-        if (t % 180 === 0 && p2.dashCooldown <= 0) { // Occasional teleport
+        if (t % 90 === 0 && p2.dashCooldown <= 0) { // Increased teleport frequency
             p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // 5-Second Transition Buffer (2400 - 2700)
+    // The Crush Transition (2400 - 2700)
     else if (t >= 2400 && t < 2700) {
-        p2.aiState = 'transition';
-        p2.isInvulnerable = 10; // Immune during transition
-        if (t === 2401) { // Teleport to starting position for next phase
-            p2.x = canvas.width / 2; p2.y = canvas.height - 100;
-            p2.aiTargetX = p2.x; p2.aiTargetY = p2.y;
+        p2.aiState = 'crush_dodge';
+        if (t === 2401) { 
+            p2.x = canvas.width / 2; p2.y = canvas.height / 2; 
+            p2.aiTargetX = p2.x; p2.aiTargetY = p2.y; 
+        }
+        // Projectiles spawn at 2460, 2470, 2480[cite: 8]
+        if (t === 2465 && p2.dashCooldown <= 0) { 
+            p2.x -= 250; p2.dashCooldown = p2.maxDashCooldown; // Dash left
+        } 
+        if (t === 2485 && p2.dashCooldown <= 0) { 
+            p2.x += 500; p2.dashCooldown = p2.maxDashCooldown; // Dash right
         }
     }
     // Phase 2.1: Random Bottom (2700 - 3600)
@@ -206,8 +228,8 @@ function updateRobot(t) {
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phases 2.2, 2.3, 3.1: Random Middle
-    else if ((t >= 3600 && t < 5400) || (t >= 5700 && t < 6800)) {
+    // Phases 2.2 & 2.3: Random Middle (3600 - 5400)
+    else if (t >= 3600 && t < 5400) {
         p2.aiState = 'random';
         if (t % 50 === 0) {
             p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
@@ -218,16 +240,41 @@ function updateRobot(t) {
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
-    // Phase 3.2: Top/Bottom Half Random (6800 - 7900)
-    else if (t >= 6800 && t < 7900) {
-        p2.aiState = 'random';
-        if (t % 80 === 0) {
-            p2.aiTargetX = canvas.width/2 + (Math.random() * 600 - 300);
-            // Flip between top and bottom halves
-            p2.aiTargetY = Math.random() > 0.5 ? canvas.height/4 : canvas.height*0.75; 
+    // The Grid Transition (5400 - 5700)
+    else if (t >= 5400 && t < 5700) {
+        p2.aiState = 'grid_safe';
+        if (t === 5401) {
+            // Grid lines spawn at 100, 250, 400, etc.[cite: 8] Safe zones are at 175, 325, 475, etc.
+            let safeX = 175 + 150 * Math.floor(canvas.width / 2 / 150);
+            let safeY = 175 + 150 * Math.floor(canvas.height / 2 / 150);
+            p2.x = safeX; p2.y = safeY;
+            p2.aiTargetX = p2.x; p2.aiTargetY = p2.y;
         }
-        if (t % 160 === 0 && p2.dashCooldown <= 0) {
+    }
+    // Phase 3.1: Random Middle (5700 - 6800)
+    else if (t >= 5700 && t < 6800) {
+        p2.aiState = 'random';
+        if (t % 50 === 0) {
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 300 - 150);
+            p2.aiTargetY = canvas.height/2 + (Math.random() * 300 - 150);
+        }
+        if (t % 150 === 0 && p2.dashCooldown <= 0) {
             p2.x = p2.aiTargetX; p2.y = p2.aiTargetY;
+            p2.dashCooldown = p2.maxDashCooldown;
+        }
+    }
+    // Phase 3.2: Horizontal Teleport Only (6800 - 7900)
+    else if (t >= 6800 && t < 7900) {
+        p2.aiState = 'random_side';
+        // Keep Y relatively stable to avoid the middle line
+        p2.aiTargetY = canvas.height / 4; 
+        
+        if (t % 60 === 0) {
+            p2.aiTargetX = canvas.width/2 + (Math.random() * 400 - 200);
+        }
+        if (t % 120 === 0 && p2.dashCooldown <= 0) {
+            // Teleport across the screen horizontally
+            p2.x = canvas.width - p2.x; 
             p2.dashCooldown = p2.maxDashCooldown;
         }
     }
